@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,9 +24,7 @@ const MonthlyChart: React.FC = () => {
   const { results } = useEnergy();
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
-  // Process results to get monthly data
   const getMonthlyData = () => {
-    // Create a map of monthly data
     const monthlyMap = new Map<string, {
       month: string,
       officeTotal: number,
@@ -36,11 +33,9 @@ const MonthlyChart: React.FC = () => {
       acCost: number
     }>();
 
-    // Process each result
     results.forEach(result => {
       const monthStr = format(result.date, 'MMM yyyy');
       
-      // If this month already exists in the map, add to its values
       if (monthlyMap.has(monthStr)) {
         const existing = monthlyMap.get(monthStr)!;
         monthlyMap.set(monthStr, {
@@ -51,7 +46,6 @@ const MonthlyChart: React.FC = () => {
           acCost: existing.acCost + result.acBill.totalAmount
         });
       } else {
-        // Otherwise, create a new entry
         monthlyMap.set(monthStr, {
           month: monthStr,
           officeTotal: result.officeTotal,
@@ -62,7 +56,6 @@ const MonthlyChart: React.FC = () => {
       }
     });
 
-    // Convert the map to an array and sort by date
     return Array.from(monthlyMap.values())
       .sort((a, b) => {
         const dateA = new Date(a.month);
@@ -73,7 +66,6 @@ const MonthlyChart: React.FC = () => {
 
   const monthlyData = getMonthlyData();
 
-  // Custom tooltip formatter to ensure proper type handling
   const formatTooltipValue = (value: ValueType, name: NameType, props: TooltipProps) => {
     if (typeof value === 'number') {
       return [`${value.toFixed(2)} ${props.unit || ''}`, name];
@@ -139,7 +131,10 @@ const MonthlyChart: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => formatTooltipValue(value, name, { unit: 'kWh' })} />
+                  <Tooltip formatter={(value: number, name: string) => [
+                    `${value.toFixed(2)} ${name.includes('Cost') ? '€' : 'kWh'}`,
+                    name
+                  ]} />
                   <Legend />
                   <Bar dataKey="officeTotal" name="Office" fill="#0088FE" />
                   <Bar dataKey="acTotal" name="A/C" fill="#00C49F" />
@@ -149,7 +144,10 @@ const MonthlyChart: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => formatTooltipValue(value, name, { unit: 'kWh' })} />
+                  <Tooltip formatter={(value: number, name: string) => [
+                    `${value.toFixed(2)} ${name.includes('Cost') ? '€' : 'kWh'}`,
+                    name
+                  ]} />
                   <Legend />
                   <Line type="monotone" dataKey="officeTotal" name="Office" stroke="#0088FE" activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="acTotal" name="A/C" stroke="#00C49F" />
@@ -165,7 +163,10 @@ const MonthlyChart: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => formatTooltipValue(value, name, { unit: '€' })} />
+                  <Tooltip formatter={(value: number, name: string) => [
+                    `${value.toFixed(2)} ${name.includes('Cost') ? '€' : 'kWh'}`,
+                    name
+                  ]} />
                   <Legend />
                   <Bar dataKey="officeCost" name="Office" fill="#0088FE" />
                   <Bar dataKey="acCost" name="A/C" fill="#00C49F" />
@@ -175,7 +176,10 @@ const MonthlyChart: React.FC = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip formatter={(value, name) => formatTooltipValue(value, name, { unit: '€' })} />
+                  <Tooltip formatter={(value: number, name: string) => [
+                    `${value.toFixed(2)} ${name.includes('Cost') ? '€' : 'kWh'}`,
+                    name
+                  ]} />
                   <Legend />
                   <Line type="monotone" dataKey="officeCost" name="Office" stroke="#0088FE" activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="acCost" name="A/C" stroke="#00C49F" />

@@ -4,7 +4,6 @@ import { ConsumptionData, ConsumptionType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from 'sonner';
 import { useEnergy } from '@/context/EnergyContext';
-import { Building2, Cable, Zap, RefreshCw, AlertCircle } from 'lucide-react';
+import { Building2, Cable, Zap, RefreshCw, EuroIcon } from 'lucide-react';
 
 interface ConsumptionInputProps {
   type: ConsumptionType;
@@ -29,9 +28,8 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
   const {
     officeData,
     acData,
-    thresholds,
+    currentResult,
     updateConsumption,
-    setThreshold,
     resetConsumptionData,
   } = useEnergy();
   
@@ -43,14 +41,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue >= 0) {
       updateConsumption(type, id, numValue);
-    }
-  };
-  
-  // Handle threshold change
-  const handleThresholdChange = (id: string, value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue > 0) {
-      setThreshold(type, id, numValue);
     }
   };
   
@@ -83,6 +73,18 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
   
   const icon = type === 'office' ? <Building2 className="h-5 w-5" /> : <Cable className="h-5 w-5" />;
   
+  // Get the corresponding data from calculation result if available
+  const getCalculatedCost = (id: string) => {
+    if (!currentResult) return null;
+    
+    const resultData = type === 'office' 
+      ? currentResult.officeData 
+      : currentResult.acData;
+    
+    const item = resultData.find(d => d.id === id);
+    return item?.cost;
+  };
+  
   return (
     <Card className="shadow-sm transition-all duration-300 h-full">
       <CardHeader className="pb-3">
@@ -111,7 +113,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>kWh</TableHead>
-                    <TableHead>Threshold</TableHead>
+                    <TableHead>Cost (€)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -133,17 +135,13 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={thresholds[item.id] || ''}
-                            onChange={(e) => handleThresholdChange(item.id, e.target.value)}
-                            className="max-w-[100px]"
-                            placeholder="Alert"
-                          />
-                          {thresholds[item.id] && item.kwh > thresholds[item.id] && (
-                            <AlertCircle className="h-4 w-4 text-destructive" />
+                          {getCalculatedCost(item.id) ? (
+                            <div className="flex items-center">
+                              <EuroIcon className="h-4 w-4 mr-1 text-green-600" />
+                              <span>{getCalculatedCost(item.id)?.toFixed(2)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground italic text-sm">N/A</span>
                           )}
                         </div>
                       </TableCell>

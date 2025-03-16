@@ -5,6 +5,7 @@ export interface ConsumptionData {
   kwh: number;
   cost?: number; // Calculated based on total bill
   percentage?: number; // Percentage of total consumption
+  month?: string; // Optional month data for historical tracking
 }
 
 export interface BillData {
@@ -24,6 +25,7 @@ export interface CalculationResult {
   acTotal: number; // Total kWh
   date: Date;
   id: string;
+  month?: string; // Month this calculation represents
 }
 
 export interface ThresholdAlert {
@@ -31,4 +33,13 @@ export interface ThresholdAlert {
   consumptionId: string;
   threshold: number; // kWh value
   active: boolean;
+}
+
+// For monthly consumption tracking
+export interface MonthlyConsumption {
+  month: string;
+  officeTotal: number;
+  acTotal: number;
+  officeCost: number;
+  acCost: number;
 }

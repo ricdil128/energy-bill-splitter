@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  // Imposta la base URL in base all'ambiente
+  base: mode === 'production' ? './' : '/',
   plugins: [
     react(),
     mode === 'development' &&
@@ -35,7 +37,7 @@ export default defineConfig(({ mode }) => ({
             type: 'image/png'
           }
         ],
-        start_url: '/',
+        start_url: './',
         display: 'standalone',
         background_color: '#ffffff'
       },

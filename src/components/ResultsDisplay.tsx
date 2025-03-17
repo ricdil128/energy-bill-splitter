@@ -12,6 +12,7 @@ import ResultsTable from './results/ResultsTable';
 import ChartControls from './results/ChartControls';
 import ResultsSummary from './results/ResultsSummary';
 import ExportButton from './results/ExportButton';
+import InstallPwaButton from './InstallPwaButton';
 
 const ResultsDisplay: React.FC = () => {
   const { currentResult } = useEnergy();
@@ -72,8 +73,9 @@ const ResultsDisplay: React.FC = () => {
         <ResultsTable data={getActiveData()} />
       </CardContent>
       
-      <CardFooter className="pt-4">
+      <CardFooter className="pt-4 flex justify-between">
         <ExportButton result={currentResult} />
+        <InstallPwaButton />
       </CardFooter>
     </Card>
   );

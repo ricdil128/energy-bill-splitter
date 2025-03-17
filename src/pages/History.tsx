@@ -8,12 +8,12 @@ import MonthlyChart from '@/components/MonthlyChart';
 const History: React.FC = () => {
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-medium mb-6">Calculation History</h1>
+      <h1 className="text-3xl font-medium mb-6">Cronologia Calcoli</h1>
       
       <Tabs defaultValue="details" className="mb-8">
         <TabsList className="mb-4">
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="charts">Charts & Analytics</TabsTrigger>
+          <TabsTrigger value="details">Dettagli</TabsTrigger>
+          <TabsTrigger value="charts">Grafici e Analisi</TabsTrigger>
         </TabsList>
         
         <TabsContent value="details">

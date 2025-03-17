@@ -27,11 +27,11 @@ const HistoryPanel: React.FC = () => {
       <Card className="shadow-sm h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl font-medium">
-            <Clock className="h-5 w-5" /> History
+            <Clock className="h-5 w-5" /> Cronologia
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center py-6">
-          <p className="text-muted-foreground">No calculations yet</p>
+          <p className="text-muted-foreground">Nessun calcolo ancora</p>
         </CardContent>
       </Card>
     );
@@ -41,7 +41,7 @@ const HistoryPanel: React.FC = () => {
     <Card className="shadow-sm h-full">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xl font-medium">
-          <Clock className="h-5 w-5" /> Calculation History
+          <Clock className="h-5 w-5" /> Cronologia Calcoli
         </CardTitle>
       </CardHeader>
       
@@ -73,7 +73,7 @@ const HistoryPanel: React.FC = () => {
                 
                 <div className="flex justify-between items-center mt-2">
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Bills: </span>
+                    <span className="text-muted-foreground">Bollette: </span>
                     <span className="font-medium">{result.officeBill.totalAmount.toFixed(2)}€</span>
                     <span className="text-muted-foreground"> + </span>
                     <span className="font-medium">{result.acBill.totalAmount.toFixed(2)}€</span>
@@ -86,7 +86,7 @@ const HistoryPanel: React.FC = () => {
                       onClick={() => loadResult(result.id)}
                       className="h-8 px-2"
                     >
-                      <span className="sr-only">Load</span>
+                      <span className="sr-only">Carica</span>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                     
@@ -97,25 +97,25 @@ const HistoryPanel: React.FC = () => {
                           size="sm"
                           className="h-8 px-2 text-destructive hover:text-destructive"
                         >
-                          <span className="sr-only">Delete</span>
+                          <span className="sr-only">Elimina</span>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                          <AlertDialogTitle>Conferma Eliminazione</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this calculation from {format(result.date, 'PP p')}?
-                            This action cannot be undone.
+                            Sei sicuro di voler eliminare questo calcolo del {format(result.date, 'PP p')}?
+                            Questa azione non può essere annullata.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>Annulla</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => deleteResult(result.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Delete
+                            Elimina
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

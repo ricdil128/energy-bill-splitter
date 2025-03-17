@@ -21,10 +21,10 @@ const ChartControls: React.FC<ChartControlsProps> = ({
     <div className="flex justify-between items-center mb-2">
       <TabsList>
         <TabsTrigger value="office" className="flex items-center gap-1">
-          <Building2 className="h-3.5 w-3.5" /> Offices
+          <Building2 className="h-3.5 w-3.5" /> Uffici
         </TabsTrigger>
         <TabsTrigger value="ac" className="flex items-center gap-1">
-          <Cable className="h-3.5 w-3.5" /> Air Conditioning
+          <Cable className="h-3.5 w-3.5" /> Aria Condizionata
         </TabsTrigger>
       </TabsList>
       

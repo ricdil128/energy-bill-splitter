@@ -15,23 +15,23 @@ const Dashboard: React.FC = () => {
   
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-medium mb-6">Energy Bill Splitter</h1>
+      <h1 className="text-3xl font-medium mb-6">Ripartizione Bollette Energetiche</h1>
       
       <Tabs defaultValue="input" className="mb-8">
         <TabsList className="mb-4">
-          <TabsTrigger value="input">Input Data</TabsTrigger>
-          <TabsTrigger value="charts">Charts & Analytics</TabsTrigger>
+          <TabsTrigger value="input">Inserimento Dati</TabsTrigger>
+          <TabsTrigger value="charts">Grafici e Analisi</TabsTrigger>
         </TabsList>
         
         <TabsContent value="input">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <ConsumptionInput type="office" title="Office Consumption" />
-            <ConsumptionInput type="ac" title="Air Conditioning Consumption" />
+            <ConsumptionInput type="office" title="Consumo Uffici" />
+            <ConsumptionInput type="ac" title="Consumo Aria Condizionata" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <BillInput type="office" title="Office Bill" />
-            <BillInput type="ac" title="Air Conditioning Bill" />
+            <BillInput type="office" title="Bolletta Ufficio" />
+            <BillInput type="ac" title="Bolletta Aria Condizionata" />
           </div>
           
           <div className="mb-6">
@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
                   size="lg"
                   className="bg-white text-primary hover:bg-white/90 transition-all"
                 >
-                  <Calculator className="mr-2 h-5 w-5" /> Calculate Split
+                  <Calculator className="mr-2 h-5 w-5" /> Calcola Ripartizione
                 </Button>
               </CardContent>
             </Card>

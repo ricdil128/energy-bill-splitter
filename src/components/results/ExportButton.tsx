@@ -13,7 +13,7 @@ interface ExportButtonProps {
 const ExportButton: React.FC<ExportButtonProps> = ({ result }) => {
   const handleExportCSV = () => {
     const csvContent = exportToCSV(result);
-    const fileName = `energy-bill-split-${format(result.date, 'yyyy-MM-dd')}.csv`;
+    const fileName = `ripartizione-energia-${format(result.date, 'yyyy-MM-dd')}.csv`;
     downloadCSV(csvContent, fileName);
   };
 
@@ -24,7 +24,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({ result }) => {
       onClick={handleExportCSV}
       className="flex items-center gap-1 ml-auto"
     >
-      <Download className="h-3.5 w-3.5" /> Export CSV
+      <Download className="h-3.5 w-3.5" /> Esporta CSV
     </Button>
   );
 };

@@ -37,14 +37,14 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
           {icon} {title}
         </CardTitle>
         <CardDescription>
-          Enter the total amount from your bill
+          Inserisci l'importo totale della bolletta
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
         <div className="flex flex-col space-y-2">
           <label htmlFor={`${type}-amount`} className="text-sm font-medium">
-            Bill Amount (€)
+            Importo Bolletta (€)
           </label>
           <div className="relative">
             <Input
@@ -62,7 +62,7 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
         
         <div className="flex flex-col space-y-2">
           <label htmlFor={`${type}-date`} className="text-sm font-medium">
-            Bill Date
+            Data Bolletta
           </label>
           <Popover>
             <PopoverTrigger asChild>
@@ -74,7 +74,7 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {bill.billDate ? format(bill.billDate, "PPP") : "Pick a date"}
+                {bill.billDate ? format(bill.billDate, "PPP") : "Seleziona una data"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">

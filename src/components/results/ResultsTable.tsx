@@ -21,10 +21,10 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
+            <TableHead>Nome</TableHead>
             <TableHead>kWh</TableHead>
-            <TableHead>Cost (€)</TableHead>
-            <TableHead>Percentage</TableHead>
+            <TableHead>Costo (€)</TableHead>
+            <TableHead>Percentuale</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

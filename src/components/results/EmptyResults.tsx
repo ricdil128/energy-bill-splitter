@@ -9,9 +9,9 @@ const EmptyResults: React.FC = () => {
       <CardContent>
         <div className="py-12">
           <PieChart className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <h3 className="text-lg font-medium mb-2">No calculation results yet</h3>
+          <h3 className="text-lg font-medium mb-2">Nessun risultato di calcolo</h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Enter your consumption data for offices and air conditioning, then click "Calculate" to see results here.
+            Inserisci i dati di consumo per uffici e aria condizionata, poi clicca "Calcola" per vedere i risultati qui.
           </p>
         </div>
       </CardContent>

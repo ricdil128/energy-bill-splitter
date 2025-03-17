@@ -64,7 +64,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     });
     
     if (updated > 0) {
-      toast.success(`Updated ${updated} ${type} consumption values`);
+      toast.success(`Aggiornati ${updated} valori di consumo ${type === 'office' ? 'uffici' : 'aria condizionata'}`);
     }
   };
 
@@ -94,7 +94,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
           </CardTitle>
           <Badge variant="outline" className="px-2 py-1 text-sm">
             <Zap className="h-3.5 w-3.5 mr-1 inline-block" />
-            Total: {totalKwh.toFixed(2)} kWh
+            Totale: {totalKwh.toFixed(2)} kWh
           </Badge>
         </div>
       </CardHeader>
@@ -102,8 +102,8 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
       <CardContent className="pb-2">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="table">Table Input</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk Import</TabsTrigger>
+            <TabsTrigger value="table">Tabella Dati</TabsTrigger>
+            <TabsTrigger value="bulk">Importazione</TabsTrigger>
           </TabsList>
           
           <TabsContent value="table" className="mt-0">
@@ -111,9 +111,9 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
               <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
+                    <TableHead>Nome</TableHead>
                     <TableHead>kWh</TableHead>
-                    <TableHead>Cost (€)</TableHead>
+                    <TableHead>Costo (€)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -141,7 +141,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                               <span>{getCalculatedCost(item.id)?.toFixed(2)}</span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground italic text-sm">N/A</span>
+                            <span className="text-muted-foreground italic text-sm">N/D</span>
                           )}
                         </div>
                       </TableCell>
@@ -155,15 +155,15 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
           <TabsContent value="bulk" className="mt-0">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Paste data in CSV format: Name, kWh (one entry per line)
+                Incolla i dati in formato CSV: Nome, kWh (una voce per riga)
               </div>
               <textarea
                 className="w-full h-[300px] p-3 border rounded-md text-sm font-mono bg-background resize-none"
-                placeholder={`Example:\n${type === 'office' ? 'Office' : 'AC'} 1, 120.5\n${type === 'office' ? 'Office' : 'AC'} 2, 85.2`}
+                placeholder={`Esempio:\n${type === 'office' ? 'Ufficio' : 'AC'} 1, 120.5\n${type === 'office' ? 'Ufficio' : 'AC'} 2, 85.2`}
                 onChange={handleBulkImport}
               />
               <div className="text-xs text-muted-foreground">
-                Note: Names must match exactly with the existing entries.
+                Nota: I nomi devono corrispondere esattamente alle voci esistenti.
               </div>
             </div>
           </TabsContent>
@@ -177,7 +177,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
           onClick={() => resetConsumptionData(type)}
           className="flex items-center gap-1 ml-auto"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Reset Data
+          <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati
         </Button>
       </CardFooter>
     </Card>

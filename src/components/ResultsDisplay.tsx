@@ -31,13 +31,13 @@ const ResultsDisplay: React.FC = () => {
     <Card className="shadow-sm h-full">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-medium">Calculation Results</CardTitle>
+          <CardTitle className="text-xl font-medium">Risultati Calcolo</CardTitle>
           <span className="text-sm text-muted-foreground">
             {format(date, 'PPpp')}
           </span>
         </div>
         <CardDescription>
-          Breakdown of costs by consumption
+          Ripartizione dei costi in base al consumo
         </CardDescription>
       </CardHeader>
       

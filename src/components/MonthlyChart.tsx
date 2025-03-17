@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -79,9 +80,9 @@ const MonthlyChart: React.FC = () => {
         <CardContent>
           <div className="py-12">
             <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No historical data yet</h3>
+            <h3 className="text-lg font-medium mb-2">Nessun dato storico</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Complete a few calculations to see monthly consumption trends.
+              Completa alcuni calcoli per vedere i trend di consumo mensili.
             </p>
           </div>
         </CardContent>
@@ -93,14 +94,14 @@ const MonthlyChart: React.FC = () => {
     <Card className="shadow-sm h-full">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-medium">Monthly Consumption Trends</CardTitle>
+          <CardTitle className="text-xl font-medium">Trend di Consumo Mensile</CardTitle>
           <div className="space-x-1">
             <Button
               variant={chartType === 'bar' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setChartType('bar')}
               className="h-8 w-8 p-0"
-              title="Bar Chart"
+              title="Grafico a Barre"
             >
               <BarChart3 className="h-4 w-4" />
             </Button>
@@ -109,7 +110,7 @@ const MonthlyChart: React.FC = () => {
               size="sm"
               onClick={() => setChartType('line')}
               className="h-8 w-8 p-0"
-              title="Line Chart"
+              title="Grafico Lineare"
             >
               <TrendingUp className="h-4 w-4" />
             </Button>
@@ -120,8 +121,8 @@ const MonthlyChart: React.FC = () => {
       <CardContent>
         <Tabs defaultValue="consumption">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="consumption">Consumption (kWh)</TabsTrigger>
-            <TabsTrigger value="cost">Cost (€)</TabsTrigger>
+            <TabsTrigger value="consumption">Consumo (kWh)</TabsTrigger>
+            <TabsTrigger value="cost">Costo (€)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="consumption" className="h-[350px]">
@@ -136,7 +137,7 @@ const MonthlyChart: React.FC = () => {
                     name
                   ]} />
                   <Legend />
-                  <Bar dataKey="officeTotal" name="Office" fill="#0088FE" />
+                  <Bar dataKey="officeTotal" name="Uffici" fill="#0088FE" />
                   <Bar dataKey="acTotal" name="A/C" fill="#00C49F" />
                 </BarChart>
               ) : (
@@ -149,7 +150,7 @@ const MonthlyChart: React.FC = () => {
                     name
                   ]} />
                   <Legend />
-                  <Line type="monotone" dataKey="officeTotal" name="Office" stroke="#0088FE" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="officeTotal" name="Uffici" stroke="#0088FE" activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="acTotal" name="A/C" stroke="#00C49F" />
                 </LineChart>
               )}
@@ -168,7 +169,7 @@ const MonthlyChart: React.FC = () => {
                     name
                   ]} />
                   <Legend />
-                  <Bar dataKey="officeCost" name="Office" fill="#0088FE" />
+                  <Bar dataKey="officeCost" name="Uffici" fill="#0088FE" />
                   <Bar dataKey="acCost" name="A/C" fill="#00C49F" />
                 </BarChart>
               ) : (
@@ -181,7 +182,7 @@ const MonthlyChart: React.FC = () => {
                     name
                   ]} />
                   <Legend />
-                  <Line type="monotone" dataKey="officeCost" name="Office" stroke="#0088FE" activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="officeCost" name="Uffici" stroke="#0088FE" activeDot={{ r: 8 }} />
                   <Line type="monotone" dataKey="acCost" name="A/C" stroke="#00C49F" />
                 </LineChart>
               )}

@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   // Imposta la base URL in base all'ambiente
-  base: mode === 'production' ? './' : '/',
+  base: './', // Impostiamo sempre ./ per assicurarci che le risorse siano caricate relativamente
   plugins: [
     react(),
     mode === 'development' &&

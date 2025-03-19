@@ -34,7 +34,7 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   });
   
-  const contextValue = {
+  const contextValue: EnergyContextType = {
     ...energyOperations,
     companyInfo: companyInfo.companyInfo,
     saveCompanyInfo: companyInfo.saveCompanyInfo

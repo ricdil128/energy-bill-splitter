@@ -274,7 +274,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => resetConsumptionData(type, activeGroupTab as any)}
+          onClick={() => resetConsumptionData(type, activeGroupTab)}
           className="flex items-center gap-1 ml-auto"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati Gruppo

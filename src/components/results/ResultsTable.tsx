@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ConsumptionData } from '@/types';
+import { ConsumptionData, ConsumptionType } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
@@ -34,7 +34,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
           {data.map((item) => (
             <TableRow key={item.id}>
               <TableCell>
-                {getCompanyName(item.id, item.name)}
+                {getCompanyName(item.id, item.type as ConsumptionType, item.name)}
               </TableCell>
               <TableCell>{item.kwh.toFixed(2)}</TableCell>
               <TableCell>{item.cost?.toFixed(2) || 0}</TableCell>

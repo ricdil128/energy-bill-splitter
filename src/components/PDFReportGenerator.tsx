@@ -87,7 +87,7 @@ const PDFReportGenerator: React.FC = () => {
   const generateSinglePDF = (item: ConsumptionData): jsPDF => {
     const doc = new jsPDF();
     const title = selectedType === 'office' ? 'Consumo Ufficio' : 'Consumo Aria Condizionata';
-    const companyName = getCompanyName(item.id, item.name);
+    const companyName = getCompanyName(item.id, item.type as ConsumptionType, item.name);
     const registry = getRegistryForConsumption(item.id);
     const date = format(currentResult.date, 'dd MMMM yyyy', { locale: it });
     const bill = selectedType === 'office' ? currentResult.officeBill : currentResult.acBill;
@@ -246,7 +246,7 @@ const PDFReportGenerator: React.FC = () => {
     try {
       if (items.length === 1) {
         const doc = generateSinglePDF(items[0]);
-        const companyName = getCompanyName(items[0].id, items[0].name);
+        const companyName = getCompanyName(items[0].id, items[0].type as ConsumptionType, items[0].name);
         const fileDate = format(currentResult.date, 'yyyy-MM-dd');
         doc.save(`report-consumi-${companyName.replace(/\s+/g, '-')}-${fileDate}.pdf`);
         
@@ -373,7 +373,7 @@ const PDFReportGenerator: React.FC = () => {
           <ul className="text-sm list-disc pl-5 space-y-1">
             {getConsumptionData().map((item) => (
               <li key={item.id}>
-                {getCompanyName(item.id, item.name)} ({item.kwh.toFixed(2)} kWh, {item.cost?.toFixed(2) || '0.00'} €)
+                {getCompanyName(item.id, item.type as ConsumptionType, item.name)} ({item.kwh.toFixed(2)} kWh, {item.cost?.toFixed(2) || '0.00'} €)
               </li>
             ))}
           </ul>

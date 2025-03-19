@@ -220,8 +220,7 @@ const CompanyInfoManager: React.FC = () => {
                 <FormItem>
                   <FormLabel>Logo</FormLabel>
                   <FormControl>
-                    {/* Placeholder for logo upload component */}
-                    <Input placeholder="URL logo (funzionalità upload da implementare)" {...field} />
+                    <ImageUpload value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormDescription>
                     Il logo verrà visualizzato sui report

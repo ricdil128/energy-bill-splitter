@@ -1,4 +1,3 @@
-
 import { ConsumptionData, BillData, CalculationResult, ConsumptionType, ConsumptionGroup, GroupedConsumptionData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { GROUP_COLABORA1, GROUP_COLABORA2 } from '@/context/energy-context-types';
@@ -213,4 +212,24 @@ export function downloadCSV(csvContent: string, filename: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/**
+ * Prepare data for report
+ */
+export function prepareDataForReport(result: CalculationResult): ReportData {
+  const groupedOfficeData = groupConsumptionData(result.officeData, result.groups || []);
+  const groupedAcData = groupConsumptionData(result.acData, result.groups || []);
+  
+  return {
+    officeData: groupedOfficeData,
+    acData: groupedAcData,
+    officeBill: result.officeBill,
+    acBill: result.acBill,
+    officeTotal: result.officeTotal,
+    acTotal: result.acTotal,
+    date: new Date(),
+    id: uuidv4(),
+    groups: [...result.groups]
+  };
 }

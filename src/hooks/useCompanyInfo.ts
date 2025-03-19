@@ -35,10 +35,10 @@ export function useCompanyInfo() {
             setCompanyInfo({
               id: data.id,
               name: data.name,
-              type: data.type,
+              type: data.type as 'company' | 'condominium',
               address: data.address,
               vatNumber: data.vat_number,
-              administrator: data.administrator ? JSON.parse(data.administrator) : undefined,
+              administrator: data.administrator ? JSON.parse(JSON.stringify(data.administrator)) : undefined,
               logoUrl: data.logo_url
             });
           } else {

@@ -54,6 +54,45 @@ export type Database = {
         }
         Relationships: []
       }
+      company_info: {
+        Row: {
+          address: string | null
+          administrator: Json | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          type: string
+          updated_at: string | null
+          user_id: string | null
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          administrator?: Json | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          type: string
+          updated_at?: string | null
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          administrator?: Json | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       consumption_groups: {
         Row: {
           created_at: string | null

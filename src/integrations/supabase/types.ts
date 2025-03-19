@@ -78,6 +78,51 @@ export type Database = {
         }
         Relationships: []
       }
+      office_registry: {
+        Row: {
+          company_name: string
+          consumption_id: string
+          consumption_type: string
+          contact_person: string | null
+          created_at: string | null
+          email: string | null
+          group_id: string
+          id: string
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_name: string
+          consumption_id: string
+          consumption_type: string
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          group_id: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_name?: string
+          consumption_id?: string
+          consumption_type?: string
+          contact_person?: string | null
+          created_at?: string | null
+          email?: string | null
+          group_id?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       thresholds: {
         Row: {
           active: boolean | null

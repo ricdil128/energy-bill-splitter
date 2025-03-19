@@ -3,6 +3,7 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { EnergyContextType } from './energy-context-types';
 import { useEnergyStorage } from '@/hooks/useEnergyStorage';
 import { useEnergyOperations } from '@/hooks/useEnergyOperations';
+import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
 
 // Create context with default values
 const EnergyContext = createContext<EnergyContextType | undefined>(undefined);

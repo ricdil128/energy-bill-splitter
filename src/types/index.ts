@@ -63,3 +63,16 @@ export interface GroupedConsumptionData {
     generalCounters?: ConsumptionData[];
   };
 }
+
+// Nuova interfaccia per l'anagrafica degli uffici
+export interface OfficeRegistry {
+  id: string;
+  consumptionId: string;
+  consumptionType: ConsumptionType;
+  groupId: string;
+  companyName: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+}

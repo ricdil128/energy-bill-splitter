@@ -7,8 +7,10 @@ import ConsumptionInput from '@/components/ConsumptionInput';
 import BillInput from '@/components/BillInput';
 import ResultsDisplay from '@/components/ResultsDisplay';
 import MonthlyChart from '@/components/MonthlyChart';
+import OfficeRegistryManager from '@/components/OfficeRegistryManager';
+import PDFReportGenerator from '@/components/PDFReportGenerator';
 import { useEnergy } from '@/context/EnergyContext';
-import { Calculator, BarChart3 } from 'lucide-react';
+import { Calculator, BarChart3, Users, FileText } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { calculateResults } = useEnergy();
@@ -20,6 +22,8 @@ const Dashboard: React.FC = () => {
       <Tabs defaultValue="input" className="mb-8">
         <TabsList className="mb-4">
           <TabsTrigger value="input">Inserimento Dati</TabsTrigger>
+          <TabsTrigger value="registry">Anagrafica Uffici</TabsTrigger>
+          <TabsTrigger value="reports">Report PDF</TabsTrigger>
           <TabsTrigger value="charts">Grafici e Analisi</TabsTrigger>
         </TabsList>
         
@@ -50,6 +54,18 @@ const Dashboard: React.FC = () => {
           
           <div className="mb-8">
             <ResultsDisplay />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="registry">
+          <div className="mb-8">
+            <OfficeRegistryManager />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="reports">
+          <div className="mb-8">
+            <PDFReportGenerator />
           </div>
         </TabsContent>
         

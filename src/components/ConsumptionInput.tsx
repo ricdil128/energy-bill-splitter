@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useEnergy } from '@/context/EnergyContext';
 import { Building2, Cable, Zap, RefreshCw, EuroIcon, ServerIcon } from 'lucide-react';
 import { GROUP_COLABORA1, GROUP_COLABORA2 } from '@/context/energy-context-types';
+import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
 
 interface ConsumptionInputProps {
   type: ConsumptionType;
@@ -35,6 +36,8 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     groupedOfficeData,
     groupedAcData
   } = useEnergy();
+  
+  const { getCompanyName } = useOfficeRegistry();
   
   const data = type === 'office' ? officeData : acData;
   const groupedData = type === 'office' ? groupedOfficeData : groupedAcData;
@@ -167,7 +170,9 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                 <TableBody>
                   {getActiveGroupItems().map((item) => (
                     <TableRow key={item.id} className="group">
-                      <TableCell>{item.name}</TableCell>
+                      <TableCell>
+                        {getCompanyName(item.id, item.name)}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Input

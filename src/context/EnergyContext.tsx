@@ -4,6 +4,7 @@ import { EnergyContextType } from './energy-context-types';
 import { useEnergyStorage, StorageData } from '@/hooks/useEnergyStorage';
 import { useEnergyOperations } from '@/hooks/useEnergyOperations';
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
+import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 import { ConsumptionType } from '@/types';
 
 // Create context with default values
@@ -16,6 +17,9 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   // Get office registry
   const officeRegistry = useOfficeRegistry();
+  
+  // Get company info
+  const companyInfo = useCompanyInfo();
   
   // Get energy operations with storage data
   const energyOperations = useEnergyOperations(storedData, (data: StorageData) => {
@@ -36,8 +40,14 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   });
   
+  const contextValue = {
+    ...energyOperations,
+    companyInfo: companyInfo.companyInfo,
+    saveCompanyInfo: companyInfo.saveCompanyInfo
+  };
+  
   return (
-    <EnergyContext.Provider value={{...energyOperations}}>
+    <EnergyContext.Provider value={contextValue}>
       {children}
     </EnergyContext.Provider>
   );

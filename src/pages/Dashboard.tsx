@@ -8,21 +8,30 @@ import BillInput from '@/components/BillInput';
 import ResultsDisplay from '@/components/ResultsDisplay';
 import MonthlyChart from '@/components/MonthlyChart';
 import OfficeRegistryManager from '@/components/OfficeRegistryManager';
+import CompanyInfoManager from '@/components/CompanyInfoManager';
 import PDFReportGenerator from '@/components/PDFReportGenerator';
 import { useEnergy } from '@/context/EnergyContext';
-import { Calculator, BarChart3, Users, FileText } from 'lucide-react';
+import { Calculator, BarChart3, Users, FileText, Building } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { calculateResults } = useEnergy();
+  const { calculateResults, companyInfo } = useEnergy();
   
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
-      <h1 className="text-3xl font-medium mb-6">Ripartizione Bollette Energetiche</h1>
+      <h1 className="text-3xl font-medium mb-2">
+        {companyInfo?.name ? companyInfo.name : 'Ripartizione Bollette Energetiche'}
+      </h1>
+      {companyInfo?.administrator?.name && (
+        <p className="text-sm text-muted-foreground mb-6">
+          Gestito da: {companyInfo.administrator.name}
+        </p>
+      )}
       
       <Tabs defaultValue="input" className="mb-8">
         <TabsList className="mb-4">
           <TabsTrigger value="input">Inserimento Dati</TabsTrigger>
-          <TabsTrigger value="registry">Anagrafica Uffici</TabsTrigger>
+          <TabsTrigger value="registry">Anagrafica</TabsTrigger>
+          <TabsTrigger value="company">Azienda/Condominio</TabsTrigger>
           <TabsTrigger value="reports">Report PDF</TabsTrigger>
           <TabsTrigger value="charts">Grafici e Analisi</TabsTrigger>
         </TabsList>
@@ -60,6 +69,12 @@ const Dashboard: React.FC = () => {
         <TabsContent value="registry">
           <div className="mb-8">
             <OfficeRegistryManager />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="company">
+          <div className="mb-8">
+            <CompanyInfoManager />
           </div>
         </TabsContent>
         

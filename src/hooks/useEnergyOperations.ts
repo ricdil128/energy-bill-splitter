@@ -64,43 +64,47 @@ export function useEnergyOperations(
     const colabora2AC = generateInitialConsumptionData(6, 'ac', GROUP_COLABORA2, 'AC');
     
     // General counters
-    const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Colabora 1');
-    const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Colabora 2');
+    const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Collabora 1');
+    const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Collabora 2');
     
     return [...colabora1AC, ...colabora2AC, ...colabora1General, ...colabora2General];
   });
   
   // Group consumption data for easier access
   const [groupedOfficeData, setGroupedOfficeData] = useState<GroupedConsumptionData>(
-    groupConsumptionData(officeData)
+    groupConsumptionData(officeData, groups)
   );
   
   const [groupedAcData, setGroupedAcData] = useState<GroupedConsumptionData>(
-    groupConsumptionData(acData)
+    groupConsumptionData(acData, groups)
   );
   
   // Update grouped data when raw data changes
   useEffect(() => {
-    setGroupedOfficeData(groupConsumptionData(officeData));
-  }, [officeData]);
+    setGroupedOfficeData(groupConsumptionData(officeData, groups));
+  }, [officeData, groups]);
   
   useEffect(() => {
-    setGroupedAcData(groupConsumptionData(acData));
-  }, [acData]);
+    setGroupedAcData(groupConsumptionData(acData, groups));
+  }, [acData, groups]);
   
   // Initialize bills
   const [officeBill, setOfficeBill] = useState<BillData>({
     totalAmount: initialData.officeBill?.totalAmount || 0,
     billDate: initialData.officeBill?.billDate || new Date(),
     description: initialData.officeBill?.description,
-    groupId: initialData.officeBill?.groupId
+    groupId: initialData.officeBill?.groupId,
+    providerName: initialData.officeBill?.providerName,
+    billNumber: initialData.officeBill?.billNumber
   });
   
   const [acBill, setAcBill] = useState<BillData>({
     totalAmount: initialData.acBill?.totalAmount || 0,
     billDate: initialData.acBill?.billDate || new Date(),
     description: initialData.acBill?.description,
-    groupId: initialData.acBill?.groupId
+    groupId: initialData.acBill?.groupId,
+    providerName: initialData.acBill?.providerName,
+    billNumber: initialData.acBill?.billNumber
   });
   
   // Initialize results and thresholds
@@ -145,13 +149,49 @@ export function useEnergyOperations(
     }
   };
   
-  // Update bill amount
-  const updateBillAmount = (type: ConsumptionType, amount: number, groupId?: string) => {
+  // Update bill amount and details
+  const updateBillAmount = (
+    type: ConsumptionType, 
+    amount: number, 
+    groupId?: string, 
+    providerName?: string, 
+    billNumber?: string
+  ) => {
     if (type === 'office') {
-      setOfficeBill(prev => ({ ...prev, totalAmount: amount, groupId }));
+      setOfficeBill(prev => ({ 
+        ...prev, 
+        totalAmount: amount, 
+        groupId,
+        providerName: providerName || prev.providerName,
+        billNumber: billNumber || prev.billNumber
+      }));
     } else {
-      setAcBill(prev => ({ ...prev, totalAmount: amount, groupId }));
+      setAcBill(prev => ({ 
+        ...prev, 
+        totalAmount: amount, 
+        groupId,
+        providerName: providerName || prev.providerName,
+        billNumber: billNumber || prev.billNumber
+      }));
     }
+  };
+  
+  // Update a group's properties
+  const updateGroup = (groupId: string, data: Partial<ConsumptionGroup>) => {
+    setGroups(prev => 
+      prev.map(group => 
+        group.id === groupId ? { ...group, ...data } : group
+      )
+    );
+    
+    // Save to storage
+    onDataChange({
+      groups: groups.map(group => 
+        group.id === groupId ? { ...group, ...data } : group
+      )
+    });
+    
+    toast.success("Informazioni proprietà aggiornate");
   };
   
   // Calculate and store results
@@ -251,8 +291,8 @@ export function useEnergyOperations(
         const colabora2AC = generateInitialConsumptionData(6, 'ac', GROUP_COLABORA2, 'AC');
         
         // General counters
-        const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Colabora 1');
-        const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Colabora 2');
+        const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Collabora 1');
+        const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Collabora 2');
         
         setAcData([...colabora1AC, ...colabora2AC, ...colabora1General, ...colabora2General]);
       }
@@ -308,6 +348,7 @@ export function useEnergyOperations(
     loadResult,
     deleteResult,
     getGroupItems,
-    getGroupGeneralCounters
+    getGroupGeneralCounters,
+    updateGroup
   };
 }

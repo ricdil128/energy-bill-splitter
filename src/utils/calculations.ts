@@ -92,7 +92,9 @@ export function generateInitialConsumptionData(
     kwh: 0,
     cost: 0,
     percentage: 0,
-    groupId
+    groupId,
+    squareMeters: 0,
+    thousandthQuota: 0
   }));
 }
 
@@ -118,16 +120,23 @@ export function generateGeneralCounters(
 /**
  * Group consumption data by groupId
  */
-export function groupConsumptionData(data: ConsumptionData[]): GroupedConsumptionData {
+export function groupConsumptionData(
+  data: ConsumptionData[],
+  groups: ConsumptionGroup[]
+): GroupedConsumptionData {
   const result: GroupedConsumptionData = {};
   
   data.forEach(item => {
     const groupId = item.groupId || 'default';
+    const group = groups.find(g => g.id === groupId);
     
     if (!result[groupId]) {
       result[groupId] = {
-        name: item.groupId === GROUP_COLABORA1 ? 'Colabora 1' : 
-              item.groupId === GROUP_COLABORA2 ? 'Colabora 2' : 'Altro',
+        name: group?.name || 
+              (groupId === GROUP_COLABORA1 ? 'Collabora 1' : 
+              groupId === GROUP_COLABORA2 ? 'Collabora 2' : 'Altro'),
+        propertyType: group?.propertyType,
+        propertyNumber: group?.propertyNumber,
         items: [],
         generalCounters: []
       };

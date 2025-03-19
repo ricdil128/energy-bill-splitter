@@ -5,7 +5,8 @@ import {
   CalculationResult, 
   ConsumptionType,
   ConsumptionGroup,
-  GroupedConsumptionData
+  GroupedConsumptionData,
+  CompanyInfo
 } from '@/types';
 
 // Define the context shape
@@ -20,8 +21,9 @@ export interface EnergyContextType {
   groups: ConsumptionGroup[];
   groupedOfficeData: GroupedConsumptionData;
   groupedAcData: GroupedConsumptionData;
+  companyInfo: CompanyInfo | null;
   updateConsumption: (type: ConsumptionType, id: string, kwh: number) => void;
-  updateBillAmount: (type: ConsumptionType, amount: number, groupId?: string) => void;
+  updateBillAmount: (type: ConsumptionType, amount: number, groupId?: string, providerName?: string, billNumber?: string) => void;
   calculateResults: () => void;
   setThreshold: (type: ConsumptionType, id: string, value: number) => void;
   resetConsumptionData: (type: ConsumptionType, groupId?: string) => void;
@@ -29,6 +31,8 @@ export interface EnergyContextType {
   deleteResult: (id: string) => void;
   getGroupItems: (type: ConsumptionType, groupId: string) => ConsumptionData[];
   getGroupGeneralCounters: (type: ConsumptionType, groupId: string) => ConsumptionData[];
+  updateGroup: (groupId: string, data: Partial<ConsumptionGroup>) => void;
+  saveCompanyInfo: (info: CompanyInfo) => Promise<boolean>;
 }
 
 // The key we'll use to store results in localStorage
@@ -40,6 +44,18 @@ export const GROUP_COLABORA2 = 'colabora2';
 
 // Default groups configuration
 export const DEFAULT_GROUPS: ConsumptionGroup[] = [
-  { id: GROUP_COLABORA1, name: 'Colabora 1', type: 'office' },
-  { id: GROUP_COLABORA2, name: 'Colabora 2', type: 'office' }
+  { 
+    id: GROUP_COLABORA1, 
+    name: 'Collabora 1', 
+    type: 'office',
+    propertyType: 'Uffici',
+    propertyNumber: '1'
+  },
+  { 
+    id: GROUP_COLABORA2, 
+    name: 'Collabora 2', 
+    type: 'office',
+    propertyType: 'Uffici',
+    propertyNumber: '2'
+  }
 ];

@@ -8,12 +8,16 @@ export interface ConsumptionData {
   month?: string; // Optional month data for historical tracking
   groupId?: string; // Group identifier for grouping consumption data
   isGeneral?: boolean; // Flag for general counter
+  squareMeters?: number; // Square meters of the property/unit
+  thousandthQuota?: number; // "Quota millesimale" for condominium calculations
 }
 
 export interface ConsumptionGroup {
   id: string;
   name: string;
   type: ConsumptionType;
+  propertyType?: string; // Type of property (building, offices, etc.)
+  propertyNumber?: string; // Property identifier number
 }
 
 export interface BillData {
@@ -21,6 +25,8 @@ export interface BillData {
   billDate: Date;
   description?: string;
   groupId?: string; // Group identifier
+  providerName?: string; // Energy provider company name
+  billNumber?: string; // Bill/invoice number
 }
 
 export type ConsumptionType = 'office' | 'ac';
@@ -36,6 +42,7 @@ export interface CalculationResult {
   id: string;
   month?: string; // Month this calculation represents
   groups?: ConsumptionGroup[]; // Groups information
+  companyInfo?: CompanyInfo; // Company/condominium information
 }
 
 export interface ThresholdAlert {
@@ -59,12 +66,14 @@ export interface MonthlyConsumption {
 export interface GroupedConsumptionData {
   [groupId: string]: {
     name: string;
+    propertyType?: string;
+    propertyNumber?: string;
     items: ConsumptionData[];
     generalCounters?: ConsumptionData[];
   };
 }
 
-// Nuova interfaccia per l'anagrafica degli uffici
+// New interface for office/property registry
 export interface OfficeRegistry {
   id: string;
   consumptionId: string;
@@ -75,4 +84,22 @@ export interface OfficeRegistry {
   email?: string;
   phone?: string;
   notes?: string;
+  isOwner?: boolean; // Flag to indicate if owner or tenant
+  squareMeters?: number; // Square meters of the property
+  thousandthQuota?: number; // "Quota millesimale" for condominium calculations
+}
+
+// New interface for company/condominium information
+export interface CompanyInfo {
+  id: string;
+  name: string; // Company/Condominium name
+  type: 'company' | 'condominium'; // Type of organization
+  address?: string;
+  vatNumber?: string;
+  administrator?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+  logoUrl?: string; // URL to the logo image
 }

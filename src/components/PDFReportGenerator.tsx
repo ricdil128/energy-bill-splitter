@@ -29,7 +29,7 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// Aggiungiamo la dichiarazione per jspdf-autotable
+// Add declaration for jspdf-autotable
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -37,11 +37,12 @@ declare module 'jspdf' {
 }
 
 const PDFReportGenerator: React.FC = () => {
-  const { currentResult, getGroupItems } = useEnergy();
+  const { currentResult, getGroupItems, companyInfo } = useEnergy();
   const { getCompanyName, getRegistryForConsumption } = useOfficeRegistry();
   const [selectedType, setSelectedType] = useState<ConsumptionType>('office');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [includeContactInfo, setIncludeContactInfo] = useState(true);
+  const [includeCompanyHeader, setIncludeCompanyHeader] = useState(true);
   const [customMessage, setCustomMessage] = useState(
     'Gentile cliente,\n\nLe inviamo il dettaglio dei consumi energetici del mese corrente. Il costo è stato calcolato in base ai consumi effettivi.\n\nCordiali saluti,\nAmministrazione'
   );
@@ -69,7 +70,7 @@ const PDFReportGenerator: React.FC = () => {
     );
   }
   
-  // Ottieni i dati di consumo per il tipo e gruppo selezionati
+  // Get consumption data for the selected type and group
   const getConsumptionData = () => {
     if (!currentResult) return [];
     
@@ -86,7 +87,7 @@ const PDFReportGenerator: React.FC = () => {
     );
   };
   
-  // Genera PDF per una singola azienda/ufficio
+  // Generate PDF for a single company/user
   const generateSinglePDF = (item: ConsumptionData): jsPDF => {
     const doc = new jsPDF();
     const title = selectedType === 'office' ? 'Consumo Ufficio' : 'Consumo Aria Condizionata';
@@ -94,24 +95,84 @@ const PDFReportGenerator: React.FC = () => {
     const registry = getRegistryForConsumption(item.id);
     const date = format(currentResult.date, 'dd MMMM yyyy', { locale: it });
     const bill = selectedType === 'office' ? currentResult.officeBill : currentResult.acBill;
+    const group = currentResult.groups?.find(g => g.id === item.groupId);
     
-    // Aggiungi intestazione
-    doc.setFontSize(20);
-    doc.text('Ripartizione Bollette Energetiche', 105, 20, { align: 'center' });
+    // Add header - include company/condominium info if available and enabled
+    let yPos = 20;
+    
+    if (includeCompanyHeader && companyInfo) {
+      doc.setFontSize(20);
+      doc.text(companyInfo.name, 105, yPos, { align: 'center' });
+      yPos += 10;
+      
+      if (companyInfo.administrator?.name) {
+        doc.setFontSize(12);
+        doc.text(`Amministratore: ${companyInfo.administrator.name}`, 105, yPos, { align: 'center' });
+        yPos += 8;
+      }
+      
+      if (companyInfo.address) {
+        doc.setFontSize(10);
+        doc.text(companyInfo.address, 105, yPos, { align: 'center' });
+        yPos += 7;
+      }
+      
+      yPos += 5;
+    } else {
+      doc.setFontSize(20);
+      doc.text('Ripartizione Bollette Energetiche', 105, yPos, { align: 'center' });
+      yPos += 10;
+    }
     
     doc.setFontSize(14);
-    doc.text(`Report ${title}`, 105, 30, { align: 'center' });
+    doc.text(`Report ${title}`, 105, yPos, { align: 'center' });
+    yPos += 10;
     
     doc.setFontSize(12);
-    doc.text(`Data: ${date}`, 105, 40, { align: 'center' });
+    doc.text(`Data: ${date}`, 105, yPos, { align: 'center' });
+    yPos += 15;
     
-    // Aggiungi informazioni azienda
+    // Add property information if available
+    if (group && group.propertyType) {
+      doc.setFontSize(12);
+      doc.text(`Proprietà: ${group.propertyType} ${group.propertyNumber} - ${group.name}`, 20, yPos);
+      yPos += 10;
+    }
+    
+    // Add bill information
+    doc.setFontSize(12);
+    if (bill.providerName) {
+      doc.text(`Fornitore: ${bill.providerName}`, 20, yPos);
+      yPos += 7;
+    }
+    
+    if (bill.billNumber) {
+      doc.text(`Numero Bolletta: ${bill.billNumber}`, 20, yPos);
+      yPos += 7;
+    }
+    
+    // Add company/user information
     doc.setFontSize(16);
-    doc.text(`Azienda: ${companyName}`, 20, 60);
+    doc.text(`Utenza: ${companyName}`, 20, yPos);
+    yPos += 10;
     
     if (includeContactInfo && registry) {
       doc.setFontSize(11);
-      let yPos = 70;
+      
+      if (registry.isOwner !== undefined) {
+        doc.text(`Tipo: ${registry.isOwner ? 'Proprietario' : 'Affittuario'}`, 20, yPos);
+        yPos += 7;
+      }
+      
+      if (registry.squareMeters) {
+        doc.text(`Metri quadri: ${registry.squareMeters} m²`, 20, yPos);
+        yPos += 7;
+      }
+      
+      if (registry.thousandthQuota) {
+        doc.text(`Quota millesimale: ${registry.thousandthQuota}`, 20, yPos);
+        yPos += 7;
+      }
       
       if (registry.contactPerson) {
         doc.text(`Persona di contatto: ${registry.contactPerson}`, 20, yPos);
@@ -127,18 +188,19 @@ const PDFReportGenerator: React.FC = () => {
         doc.text(`Telefono: ${registry.phone}`, 20, yPos);
         yPos += 7;
       }
+      
+      yPos += 3;
     }
     
-    // Aggiungi messaggio personalizzato
+    // Add custom message
     doc.setFontSize(11);
     const splitMessage = doc.splitTextToSize(customMessage, 170);
-    doc.text(splitMessage, 20, 90);
+    doc.text(splitMessage, 20, yPos);
+    yPos += splitMessage.length * 7 + 10;
     
-    // Aggiungi tabella consumi
-    const tableY = 90 + splitMessage.length * 7 + 10;
-    
+    // Add consumption table
     doc.autoTable({
-      startY: tableY,
+      startY: yPos,
       head: [['Descrizione', 'kWh', 'Costo (€)', 'Percentuale']],
       body: [
         [
@@ -153,18 +215,29 @@ const PDFReportGenerator: React.FC = () => {
       margin: { top: 20 }
     });
     
-    // Aggiungi totale bolletta
+    // Add bill total
     const finalY = (doc as any).lastAutoTable.finalY + 20;
     
     doc.setFontSize(12);
     doc.text(`Totale Bolletta: ${bill.totalAmount.toFixed(2)} €`, 20, finalY);
     doc.text(`Quota a carico: ${item.cost?.toFixed(2) || '0.00'} €`, 20, finalY + 10);
     
-    // Aggiungi piè di pagina
+    // Add footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(10);
+      
+      // Add company/administrator info in footer if available
+      if (companyInfo?.administrator?.name) {
+        doc.text(
+          `Gestito da: ${companyInfo.administrator.name}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 20,
+          { align: 'center' }
+        );
+      }
+      
       doc.text(
         `Pagina ${i} di ${pageCount}`,
         doc.internal.pageSize.getWidth() / 2,
@@ -176,7 +249,7 @@ const PDFReportGenerator: React.FC = () => {
     return doc;
   };
   
-  // Genera PDF per tutte le aziende/uffici selezionati
+  // Generate PDFs for all selected companies/users
   const generateAllPDFs = () => {
     const items = getConsumptionData();
     
@@ -187,7 +260,7 @@ const PDFReportGenerator: React.FC = () => {
     
     try {
       if (items.length === 1) {
-        // Caso singolo report
+        // Single report case
         const doc = generateSinglePDF(items[0]);
         const companyName = getCompanyName(items[0].id, items[0].name);
         const fileDate = format(currentResult.date, 'yyyy-MM-dd');
@@ -195,7 +268,7 @@ const PDFReportGenerator: React.FC = () => {
         
         toast.success('Report PDF generato con successo');
       } else {
-        // Caso multiple aziende/uffici
+        // Multiple companies/users case
         const mergedPdf = new jsPDF();
         let isFirst = true;
         
@@ -203,20 +276,20 @@ const PDFReportGenerator: React.FC = () => {
           const doc = generateSinglePDF(item);
           
           if (!isFirst) {
-            // Aggiungi pagine dal secondo documento in poi
+            // Add pages from second document onwards
             for (let i = 1; i <= doc.getNumberOfPages(); i++) {
               const pageData = doc.output('arraybuffer');
               mergedPdf.addPage();
               mergedPdf.addPage();
-              // Qui sarebbe ideale usare un library per merge PDF,
-              // ma per semplicità salviamo file separati
+              // Here we would ideally use a PDF merge library,
+              // but for simplicity we save separate files
             }
           }
           
           isFirst = false;
         });
         
-        // Per semplicità, in questa versione salviamo un singolo file
+        // For simplicity, in this version we save a single file
         const fileDate = format(currentResult.date, 'yyyy-MM-dd');
         mergedPdf.save(`report-consumi-multipli-${fileDate}.pdf`);
         
@@ -258,32 +331,48 @@ const PDFReportGenerator: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="group">Gruppo</Label>
+            <Label htmlFor="group">Proprietà</Label>
             <Select 
               value={selectedGroup} 
               onValueChange={setSelectedGroup}
             >
               <SelectTrigger id="group">
-                <SelectValue placeholder="Seleziona gruppo" />
+                <SelectValue placeholder="Seleziona proprietà" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i gruppi</SelectItem>
-                <SelectItem value="colabora1">Colabora 1</SelectItem>
-                <SelectItem value="colabora2">Colabora 2</SelectItem>
+                <SelectItem value="all">Tutte le proprietà</SelectItem>
+                {currentResult.groups?.map(group => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.propertyType ? `${group.propertyType} ${group.propertyNumber} - ${group.name}` : group.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="include-contact"
-            checked={includeContactInfo}
-            onCheckedChange={setIncludeContactInfo}
-          />
-          <Label htmlFor="include-contact">
-            Includi informazioni di contatto
-          </Label>
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="include-contact"
+              checked={includeContactInfo}
+              onCheckedChange={setIncludeContactInfo}
+            />
+            <Label htmlFor="include-contact">
+              Includi informazioni di contatto
+            </Label>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="include-company"
+              checked={includeCompanyHeader}
+              onCheckedChange={setIncludeCompanyHeader}
+            />
+            <Label htmlFor="include-company">
+              Includi intestazione azienda/condominio
+            </Label>
+          </div>
         </div>
         
         <div className="space-y-2">

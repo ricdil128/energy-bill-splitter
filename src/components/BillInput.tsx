@@ -3,13 +3,14 @@ import React from 'react';
 import { ConsumptionType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Building2, Cable, CalendarIcon } from 'lucide-react';
+import { Building2, Cable, CalendarIcon, FileText, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useEnergy } from '@/context/EnergyContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 interface BillInputProps {
   type: ConsumptionType;
@@ -24,8 +25,16 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     if (!isNaN(value) && value >= 0) {
-      updateBillAmount(type, value);
+      updateBillAmount(type, value, bill.groupId, bill.providerName, bill.billNumber);
     }
+  };
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateBillAmount(type, bill.totalAmount, bill.groupId, e.target.value, bill.billNumber);
+  };
+
+  const handleBillNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateBillAmount(type, bill.totalAmount, bill.groupId, bill.providerName, e.target.value);
   };
   
   const icon = type === 'office' ? <Building2 className="h-5 w-5" /> : <Cable className="h-5 w-5" />;
@@ -37,15 +46,15 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
           {icon} {title}
         </CardTitle>
         <CardDescription>
-          Inserisci l'importo totale della bolletta
+          Inserisci i dettagli della bolletta
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
         <div className="flex flex-col space-y-2">
-          <label htmlFor={`${type}-amount`} className="text-sm font-medium">
+          <Label htmlFor={`${type}-amount`} className="text-sm font-medium">
             Importo Bolletta (€)
-          </label>
+          </Label>
           <div className="relative">
             <Input
               id={`${type}-amount`}
@@ -59,11 +68,45 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
           </div>
         </div>
+
+        <div className="flex flex-col space-y-2">
+          <Label htmlFor={`${type}-provider`} className="text-sm font-medium">
+            Fornitore
+          </Label>
+          <div className="relative">
+            <Input
+              id={`${type}-provider`}
+              type="text"
+              placeholder="Es. Enel, ENI, A2A"
+              value={bill.providerName || ''}
+              onChange={handleProviderChange}
+              className="pl-8"
+            />
+            <Zap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <Label htmlFor={`${type}-number`} className="text-sm font-medium">
+            Numero Bolletta/Fattura
+          </Label>
+          <div className="relative">
+            <Input
+              id={`${type}-number`}
+              type="text"
+              placeholder="Es. 123456789"
+              value={bill.billNumber || ''}
+              onChange={handleBillNumberChange}
+              className="pl-8"
+            />
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
         
         <div className="flex flex-col space-y-2">
-          <label htmlFor={`${type}-date`} className="text-sm font-medium">
+          <Label htmlFor={`${type}-date`} className="text-sm font-medium">
             Data Bolletta
-          </label>
+          </Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -83,7 +126,13 @@ const BillInput: React.FC<BillInputProps> = ({ type, title }) => {
                 selected={bill.billDate}
                 onSelect={(date) => {
                   if (date) {
-                    updateBillAmount(type, bill.totalAmount);
+                    updateBillAmount(
+                      type, 
+                      bill.totalAmount, 
+                      bill.groupId, 
+                      bill.providerName, 
+                      bill.billNumber
+                    );
                   }
                 }}
                 initialFocus

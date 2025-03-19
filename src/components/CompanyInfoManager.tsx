@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useEnergy } from '@/context/EnergyContext';
 import { CompanyInfo } from '@/types';
@@ -28,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useForm } from 'react-hook-form';
 import { Building, Building2, Users, Save, RefreshCw, Plus } from 'lucide-react';

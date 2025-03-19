@@ -6,7 +6,8 @@ import {
   CalculationResult, 
   ConsumptionType,
   ConsumptionGroup,
-  GroupedConsumptionData
+  GroupedConsumptionData,
+  ThresholdAlert
 } from '@/types';
 import { 
   generateInitialConsumptionData,
@@ -24,23 +25,41 @@ import {
   GROUP_COLABORA2 
 } from '@/context/energy-context-types';
 
+// Update the interface for the stored data
+interface StoredData {
+  officeData: ConsumptionData[];
+  acData: ConsumptionData[];
+  officeBill: BillData | null;
+  acBill: BillData | null;
+  calculationResults: CalculationResult[];
+  consumptionGroups: ConsumptionGroup[];
+  thresholdAlerts: ThresholdAlert[];
+  monthlyConsumptionData: any[];
+}
+
 export function useEnergyOperations(
-  initialData: StorageData,
+  initialData: StoredData,
   onDataChange: (data: StorageData) => void
 ) {
   // Initialize groups
   const [groups, setGroups] = useState<ConsumptionGroup[]>(
-    initialData.groups || DEFAULT_GROUPS
+    initialData.consumptionGroups.length > 0 ? initialData.consumptionGroups : DEFAULT_GROUPS
   );
   
   // Initialize state for consumption data
   const [officeData, setOfficeData] = useState<ConsumptionData[]>(() => {
+    if (initialData.officeData.length > 0) {
+      return initialData.officeData;
+    }
     const colabora1Offices = generateInitialConsumptionData(9, 'office', GROUP_COLABORA1, 'Ufficio');
     const colabora2Offices = generateInitialConsumptionData(6, 'office', GROUP_COLABORA2, 'Ufficio');
     return [...colabora1Offices, ...colabora2Offices];
   });
   
   const [acData, setAcData] = useState<ConsumptionData[]>(() => {
+    if (initialData.acData.length > 0) {
+      return initialData.acData;
+    }
     const colabora1AC = generateInitialConsumptionData(9, 'ac', GROUP_COLABORA1, 'AC');
     const colabora2AC = generateInitialConsumptionData(6, 'ac', GROUP_COLABORA2, 'AC');
     
@@ -71,19 +90,31 @@ export function useEnergyOperations(
   
   // Initialize bills
   const [officeBill, setOfficeBill] = useState<BillData>({
-    totalAmount: 0,
-    billDate: new Date(),
+    totalAmount: initialData.officeBill?.totalAmount || 0,
+    billDate: initialData.officeBill?.billDate || new Date(),
+    description: initialData.officeBill?.description,
+    groupId: initialData.officeBill?.groupId
   });
   
   const [acBill, setAcBill] = useState<BillData>({
-    totalAmount: 0,
-    billDate: new Date(),
+    totalAmount: initialData.acBill?.totalAmount || 0,
+    billDate: initialData.acBill?.billDate || new Date(),
+    description: initialData.acBill?.description,
+    groupId: initialData.acBill?.groupId
   });
   
   // Initialize results and thresholds
-  const [results, setResults] = useState<CalculationResult[]>(initialData.results || []);
+  const [results, setResults] = useState<CalculationResult[]>(initialData.calculationResults || []);
   const [currentResult, setCurrentResult] = useState<CalculationResult | null>(null);
-  const [thresholds, setThresholds] = useState<Record<string, number>>(initialData.thresholds || {});
+  
+  // Convert ThresholdAlert array to a simple Record for easier access
+  const [thresholds, setThresholds] = useState<Record<string, number>>(() => {
+    const thresholdMap: Record<string, number> = {};
+    initialData.thresholdAlerts.forEach(alert => {
+      thresholdMap[alert.consumptionId] = alert.threshold;
+    });
+    return thresholdMap;
+  });
   
   // Helper method to get items for a specific group
   const getGroupItems = (type: ConsumptionType, groupId: string): ConsumptionData[] => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { CalculationResult, ConsumptionData, BillData, ConsumptionGroup, ThresholdAlert, MonthlyConsumption, OfficeRegistry } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,18 @@ const STORAGE_KEY_RESULTS = 'calculation-results';
 const STORAGE_KEY_GROUPS = 'consumption-groups';
 const STORAGE_KEY_THRESHOLDS = 'threshold-alerts';
 const STORAGE_KEY_MONTHLY_CONSUMPTION = 'monthly-consumption';
+
+// Define StorageData type
+export interface StorageData {
+  officeData?: ConsumptionData[];
+  acData?: ConsumptionData[];
+  officeBill?: BillData | null;
+  acBill?: BillData | null;
+  results?: CalculationResult[];
+  groups?: ConsumptionGroup[];
+  thresholds?: Record<string, number>;
+  monthlyConsumptionData?: MonthlyConsumption[];
+}
 
 export function useEnergyStorage() {
   const [officeData, setOfficeData] = useState<ConsumptionData[]>([]);
@@ -35,35 +48,24 @@ export function useEnergyStorage() {
       let storedMonthlyConsumption: MonthlyConsumption[] = [];
       
       if (user) {
-        // Load data from Supabase
-        const { data: dbOfficeData } = await supabase
-          .from('office_consumption')
+        // Since we only have calculation_results, consumption_groups, office_registry and thresholds tables in Supabase,
+        // we'll need to use localStorage for the other data for now
+        
+        // Load consumption groups from Supabase
+        const { data: dbGroups } = await supabase
+          .from('consumption_groups')
           .select('*')
           .eq('user_id', user.id);
-        storedOfficeData = dbOfficeData || [];
+          
+        if (dbGroups) {
+          storedGroups = dbGroups.map(group => ({
+            id: group.id,
+            name: group.name,
+            type: group.type as any, // Cast to ConsumptionType
+          }));
+        }
         
-        const { data: dbAcData } = await supabase
-          .from('ac_consumption')
-          .select('*')
-          .eq('user_id', user.id);
-        storedAcData = dbAcData || [];
-        
-        const { data: dbOfficeBill } = await supabase
-          .from('office_bills')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('bill_date', { ascending: false })
-          .limit(1);
-        storedOfficeBill = dbOfficeBill?.[0] || null;
-        
-        const { data: dbAcBill } = await supabase
-          .from('ac_bills')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('bill_date', { ascending: false })
-          .limit(1);
-        storedAcBill = dbAcBill?.[0] || null;
-        
+        // Load calculation results from Supabase
         const { data: dbResults } = await supabase
           .from('calculation_results')
           .select('*')
@@ -72,37 +74,40 @@ export function useEnergyStorage() {
           
         if (dbResults) {
           storedResults = dbResults.map(result => ({
-            ...result,
-            date: new Date(result.date),
-            officeData: result.office_data,
-            acData: result.ac_data,
-            officeBill: result.office_bill,
-            acBill: result.ac_bill,
+            id: result.id,
+            date: new Date(result.date || new Date()),
             officeTotal: result.office_total,
-            acTotal: result.ac_total
+            acTotal: result.ac_total,
+            officeData: result.office_data as any,
+            acData: result.ac_data as any,
+            officeBill: result.office_bill as any,
+            acBill: result.ac_bill as any,
+            month: result.month || '',
+            groups: result.groups as any || []
           }));
-        } else {
-          storedResults = [];
         }
         
-        const { data: dbGroups } = await supabase
-          .from('consumption_groups')
-          .select('*')
-          .eq('user_id', user.id);
-        storedGroups = dbGroups || [];
-        
+        // Load thresholds from Supabase
         const { data: dbThresholds } = await supabase
-          .from('threshold_alerts')
+          .from('thresholds')
           .select('*')
           .eq('user_id', user.id);
-        storedThresholds = dbThresholds || [];
-
-        const { data: dbMonthlyConsumption } = await supabase
-          .from('monthly_consumption')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('month', { ascending: false });
-        storedMonthlyConsumption = dbMonthlyConsumption || [];
+          
+        if (dbThresholds) {
+          storedThresholds = dbThresholds.map(threshold => ({
+            type: threshold.consumption_type as any,
+            consumptionId: threshold.consumption_id,
+            threshold: threshold.threshold_value,
+            active: threshold.active || true
+          }));
+        }
+        
+        // Load from localStorage for items not yet migrated to Supabase
+        storedOfficeData = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE) || '[]');
+        storedAcData = JSON.parse(localStorage.getItem(STORAGE_KEY_AC) || '[]');
+        storedOfficeBill = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE_BILL) || 'null');
+        storedAcBill = JSON.parse(localStorage.getItem(STORAGE_KEY_AC_BILL) || 'null');
+        storedMonthlyConsumption = JSON.parse(localStorage.getItem(STORAGE_KEY_MONTHLY_CONSUMPTION) || '[]');
       } else {
         // Load data from localStorage
         storedOfficeData = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE) || '[]');
@@ -149,80 +154,6 @@ export function useEnergyStorage() {
     
     try {
       switch (key) {
-        case STORAGE_KEY_OFFICE:
-          // Save office data to Supabase
-          const { error: officeError } = await supabase
-            .from('office_consumption')
-            .upsert(
-              (data as ConsumptionData[]).map(item => ({
-                id: item.id,
-                name: item.name,
-                kwh: item.kwh,
-                cost: item.cost,
-                percentage: item.percentage,
-                month: item.month,
-                group_id: item.groupId,
-                is_general: item.isGeneral,
-                user_id: user.id
-              })),
-              { onConflict: 'id' }
-            );
-          if (officeError) throw officeError;
-          break;
-        case STORAGE_KEY_AC:
-          // Save AC data to Supabase
-          const { error: acError } = await supabase
-            .from('ac_consumption')
-            .upsert(
-              (data as ConsumptionData[]).map(item => ({
-                id: item.id,
-                name: item.name,
-                kwh: item.kwh,
-                cost: item.cost,
-                percentage: item.percentage,
-                month: item.month,
-                group_id: item.groupId,
-                is_general: item.isGeneral,
-                user_id: user.id
-              })),
-              { onConflict: 'id' }
-            );
-          if (acError) throw acError;
-          break;
-        case STORAGE_KEY_OFFICE_BILL:
-          // Save office bill to Supabase
-          const officeBillData = data as BillData;
-          const { error: officeBillError } = await supabase
-            .from('office_bills')
-            .upsert(
-              {
-                total_amount: officeBillData.totalAmount,
-                bill_date: officeBillData.billDate.toISOString(),
-                description: officeBillData.description,
-                group_id: officeBillData.groupId,
-                user_id: user.id
-              },
-              { onConflict: 'user_id' }
-            );
-          if (officeBillError) throw officeBillError;
-          break;
-        case STORAGE_KEY_AC_BILL:
-          // Save AC bill to Supabase
-          const acBillData = data as BillData;
-          const { error: acBillError } = await supabase
-            .from('ac_bills')
-            .upsert(
-              {
-                total_amount: acBillData.totalAmount,
-                bill_date: acBillData.billDate.toISOString(),
-                description: acBillData.description,
-                group_id: acBillData.groupId,
-                user_id: user.id
-              },
-              { onConflict: 'user_id' }
-            );
-          if (acBillError) throw acBillError;
-          break;
         case STORAGE_KEY_GROUPS:
           // Save consumption groups to Supabase
           const { error: groupsError } = await supabase
@@ -238,15 +169,21 @@ export function useEnergyStorage() {
             );
           if (groupsError) throw groupsError;
           break;
+
+        case STORAGE_KEY_RESULTS:
+          // Save calculation results to Supabase
+          // We'll handle this in the saveCalculationResult function
+          break;
+
         case STORAGE_KEY_THRESHOLDS:
           // Save threshold alerts to Supabase
           const { error: thresholdsError } = await supabase
-            .from('threshold_alerts')
+            .from('thresholds')
             .upsert(
               (data as ThresholdAlert[]).map(alert => ({
-                type: alert.type,
                 consumption_id: alert.consumptionId,
-                threshold: alert.threshold,
+                consumption_type: alert.type,
+                threshold_value: alert.threshold,
                 active: alert.active,
                 user_id: user.id
               })),
@@ -254,27 +191,10 @@ export function useEnergyStorage() {
             );
           if (thresholdsError) throw thresholdsError;
           break;
-        case STORAGE_KEY_MONTHLY_CONSUMPTION:
-          // Save monthly consumption data to Supabase
-          const { error: monthlyConsumptionError } = await supabase
-            .from('monthly_consumption')
-            .upsert(
-              (data as MonthlyConsumption[]).map(item => ({
-                month: item.month,
-                office_total: item.officeTotal,
-                ac_total: item.acTotal,
-                office_cost: item.officeCost,
-                ac_cost: item.acCost,
-                group_id: item.groupId,
-                user_id: user.id
-              })),
-              { onConflict: 'month' }
-            );
-          if (monthlyConsumptionError) throw monthlyConsumptionError;
-          break;
+
         default:
-          console.warn(`Unknown storage key: ${key}`);
-          return false;
+          console.warn(`No Supabase table for storage key: ${key}, storing in localStorage only`);
+          return true;
       }
       return true;
     } catch (error) {
@@ -283,25 +203,25 @@ export function useEnergyStorage() {
     }
   };
 
-  // Salva un calcolo nel database o nel localStorage
+  // Save a calculation to the database or localStorage
   const saveCalculationResult = async (result: CalculationResult): Promise<boolean> => {
     try {
       if (user) {
-        // Preparazione dati per Supabase (JSON)
+        // Prepare data for Supabase (as JSON)
         const dbData = {
           date: result.date.toISOString(),
           office_total: result.officeTotal,
           ac_total: result.acTotal,
-          office_data: result.officeData,
-          ac_data: result.acData,
-          office_bill: result.officeBill,
-          ac_bill: result.acBill,
+          office_data: JSON.stringify(result.officeData),
+          ac_data: JSON.stringify(result.acData),
+          office_bill: JSON.stringify(result.officeBill),
+          ac_bill: JSON.stringify(result.acBill),
           month: result.month,
-          groups: result.groups,
+          groups: JSON.stringify(result.groups),
           user_id: user.id
         };
         
-        // Inserimento nel database
+        // Insert into database
         const { error } = await supabase
           .from('calculation_results')
           .insert(dbData);
@@ -309,14 +229,14 @@ export function useEnergyStorage() {
         if (error) throw error;
       }
 
-      // Aggiorna anche il localStorage
+      // Also update localStorage
       const results = JSON.parse(localStorage.getItem(STORAGE_KEY_RESULTS) || '[]');
       results.unshift(result);
       localStorage.setItem(STORAGE_KEY_RESULTS, JSON.stringify(results));
       
       return true;
     } catch (error) {
-      console.error('Errore nel salvataggio del calcolo:', error);
+      console.error('Error saving calculation:', error);
       return false;
     }
   };

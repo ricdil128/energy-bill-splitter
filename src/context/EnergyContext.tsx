@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { EnergyContextType } from './energy-context-types';
-import { useEnergyStorage } from '@/hooks/useEnergyStorage';
+import { useEnergyStorage, StorageData } from '@/hooks/useEnergyStorage';
 import { useEnergyOperations } from '@/hooks/useEnergyOperations';
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
 
@@ -10,13 +10,30 @@ const EnergyContext = createContext<EnergyContextType | undefined>(undefined);
 
 export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Get storage functionality
-  const { storedData, saveData } = useEnergyStorage();
+  const energyStorage = useEnergyStorage();
+  const storedData = energyStorage.getStoredData();
   
   // Get office registry
   const officeRegistry = useOfficeRegistry();
   
   // Get energy operations with storage data
-  const energyOperations = useEnergyOperations(storedData, saveData);
+  const energyOperations = useEnergyOperations(storedData, (data: StorageData) => {
+    if (data.officeData) energyStorage.setOfficeData(data.officeData);
+    if (data.acData) energyStorage.setAcData(data.acData);
+    if (data.officeBill) energyStorage.setOfficeBill(data.officeBill);
+    if (data.acBill) energyStorage.setAcBill(data.acBill);
+    if (data.results) energyStorage.setCalculationResults(data.results);
+    if (data.groups) energyStorage.setConsumptionGroups(data.groups);
+    if (data.thresholds) {
+      const thresholdAlerts = Object.entries(data.thresholds).map(([id, threshold]) => ({
+        consumptionId: id,
+        threshold,
+        type: id.includes('ac') ? 'ac' : 'office',
+        active: true
+      }));
+      energyStorage.setThresholdAlerts(thresholdAlerts);
+    }
+  });
   
   return (
     <EnergyContext.Provider value={{...energyOperations}}>

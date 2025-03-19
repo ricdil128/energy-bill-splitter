@@ -32,6 +32,8 @@ export interface EnergyContextType {
   getGroupItems: (type: ConsumptionType, groupId: string) => ConsumptionData[];
   getGroupGeneralCounters: (type: ConsumptionType, groupId: string) => ConsumptionData[];
   updateGroup: (groupId: string, data: Partial<ConsumptionGroup>) => void;
+  addGroup: (name: string, type: ConsumptionType, propertyType?: string, propertyNumber?: string) => string;
+  deleteGroup: (groupId: string) => boolean;
   saveCompanyInfo: (info: CompanyInfo) => Promise<boolean>;
 }
 

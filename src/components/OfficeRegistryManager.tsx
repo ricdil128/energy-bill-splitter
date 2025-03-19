@@ -45,20 +45,35 @@ import {
   Trash2, 
   Plus,
   Home,
-  BedDouble 
+  BedDouble,
+  AlertTriangle
 } from 'lucide-react';
-import { GROUP_COLABORA1, GROUP_COLABORA2 } from '@/context/energy-context-types';
 import { v4 as uuidv4 } from 'uuid';
 
 const OfficeRegistryManager: React.FC = () => {
-  const { officeData, acData, groups, updateGroup } = useEnergy();
+  const { officeData, acData, groups, updateGroup, addGroup, deleteGroup } = useEnergy();
   const { registries, saveRegistry, deleteRegistry, getCompanyName } = useOfficeRegistry();
   const [activeTab, setActiveTab] = useState<string>('office');
-  const [activeGroupTab, setActiveGroupTab] = useState<string>(GROUP_COLABORA1);
+  const [activeGroupTab, setActiveGroupTab] = useState<string>(groups.length > 0 ? groups[0].id : '');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRegistry, setSelectedRegistry] = useState<OfficeRegistry | null>(null);
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<{id: string, name: string, propertyType: string, propertyNumber: string} | null>(null);
+  const [newGroupDialogOpen, setNewGroupDialogOpen] = useState(false);
+  const [newGroupData, setNewGroupData] = useState({
+    name: '',
+    propertyType: '',
+    propertyNumber: '',
+    type: 'office' as ConsumptionType
+  });
+  const [deletePropertyDialogOpen, setDeletePropertyDialogOpen] = useState(false);
+  
+  // Set active group tab when groups change
+  useEffect(() => {
+    if (groups.length > 0 && !groups.find(g => g.id === activeGroupTab)) {
+      setActiveGroupTab(groups[0].id);
+    }
+  }, [groups, activeGroupTab]);
   
   // Get data for the active tab
   const getData = () => {
@@ -161,6 +176,41 @@ const OfficeRegistryManager: React.FC = () => {
     }
   };
   
+  // Handle add new group
+  const handleAddGroup = () => {
+    if (newGroupData.name.trim() === '') {
+      return;
+    }
+    
+    addGroup(
+      newGroupData.name.trim(), 
+      newGroupData.type,
+      newGroupData.propertyType.trim() || undefined,
+      newGroupData.propertyNumber.trim() || undefined
+    );
+    
+    setNewGroupDialogOpen(false);
+    setNewGroupData({
+      name: '',
+      propertyType: '',
+      propertyNumber: '',
+      type: 'office'
+    });
+  };
+  
+  // Handle delete group
+  const handleDeleteProperty = () => {
+    if (activeGroupTab) {
+      const result = deleteGroup(activeGroupTab);
+      if (result) {
+        setDeletePropertyDialogOpen(false);
+        if (groups.length > 0) {
+          setActiveGroupTab(groups[0].id);
+        }
+      }
+    }
+  };
+  
   // Get property display name
   const getPropertyDisplayName = (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
@@ -193,127 +243,161 @@ const OfficeRegistryManager: React.FC = () => {
           </TabsList>
         </Tabs>
         
-        <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="w-full mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium">Proprietà</h3>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleEditProperty(activeGroupTab)}
-              className="flex items-center gap-1"
-            >
-              <FileEdit className="h-3.5 w-3.5" /> Modifica Proprietà
+        {groups.length > 0 ? (
+          <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="w-full mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-medium">Proprietà</h3>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleEditProperty(activeGroupTab)}
+                  className="flex items-center gap-1"
+                >
+                  <FileEdit className="h-3.5 w-3.5" /> Modifica Proprietà
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => setDeletePropertyDialogOpen(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Elimina
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => setNewGroupDialogOpen(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Nuova Proprietà
+                </Button>
+              </div>
+            </div>
+            <TabsList className="w-full mb-4 flex overflow-x-auto">
+              {groups.map(group => (
+                <TabsTrigger key={group.id} value={group.id} className="flex-1 min-w-48">
+                  {group.propertyType && group.propertyNumber ? (
+                    <div className="flex items-center gap-1">
+                      <Home className="h-3.5 w-3.5" />
+                      <span>
+                        {group.propertyType} {group.propertyNumber} - {group.name}
+                      </span>
+                    </div>
+                  ) : (
+                    group.name
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-8 mb-4 border-2 border-dashed rounded-lg border-muted-foreground/20">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+            <h3 className="text-lg font-medium">Nessuna proprietà configurata</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Aggiungi una nuova proprietà o condominio per iniziare a gestire le utenze
+            </p>
+            <Button onClick={() => setNewGroupDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Aggiungi Proprietà
             </Button>
           </div>
-          <TabsList className="grid grid-cols-2 mb-4">
-            {groups.map(group => (
-              <TabsTrigger key={group.id} value={group.id}>
-                {group.propertyType && group.propertyNumber ? (
-                  <div className="flex items-center gap-1">
-                    <Home className="h-3.5 w-3.5" />
-                    <span>
-                      {group.propertyType} {group.propertyNumber} - {group.name}
-                    </span>
-                  </div>
-                ) : (
-                  group.name
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        )}
         
-        <ScrollArea className="h-[400px] pr-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Utenza</TableHead>
-                <TableHead>Azienda/Inquilino</TableHead>
-                <TableHead>Dettagli</TableHead>
-                <TableHead className="text-right">Azioni</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {getData().map((item) => {
-                const registry = registries.find(r => 
-                  r.consumptionId === item.id && 
-                  r.consumptionType === activeTab
-                );
-                
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>
-                      {registry?.companyName || 
-                        <span className="text-muted-foreground italic">Non impostato</span>
-                      }
-                      {registry?.isOwner && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 dark:bg-blue-900 dark:text-blue-300">
-                          Proprietario
-                        </span>
-                      )}
-                      {registry && !registry.isOwner && (
-                        <span className="ml-2 text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 dark:bg-amber-900 dark:text-amber-300">
-                          Affittuario
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col space-y-1 text-sm">
-                        {registry?.contactPerson && (
-                          <span>{registry.contactPerson}</span>
-                        )}
-                        {registry?.squareMeters ? (
-                          <span className="text-xs text-muted-foreground">
-                            <BedDouble className="h-3 w-3 inline mr-1" /> 
-                            {registry.squareMeters} m²
-                          </span>
-                        ) : null}
-                        {registry?.thousandthQuota ? (
-                          <span className="text-xs text-muted-foreground">
-                            Millesimi: {registry.thousandthQuota}
-                          </span>
-                        ) : null}
-                        {registry?.email && (
-                          <span className="flex items-center text-xs text-muted-foreground">
-                            <Mail className="h-3 w-3 mr-1" /> {registry.email}
+        {groups.length > 0 && (
+          <ScrollArea className="h-[400px] pr-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Utenza</TableHead>
+                  <TableHead>Azienda/Inquilino</TableHead>
+                  <TableHead>Dettagli</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {getData().map((item) => {
+                  const registry = registries.find(r => 
+                    r.consumptionId === item.id && 
+                    r.consumptionType === activeTab
+                  );
+                  
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>
+                        {registry?.companyName || 
+                          <span className="text-muted-foreground italic">Non impostato</span>
+                        }
+                        {registry?.isOwner && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5 dark:bg-blue-900 dark:text-blue-300">
+                            Proprietario
                           </span>
                         )}
-                        {registry?.phone && (
-                          <span className="flex items-center text-xs text-muted-foreground">
-                            <Phone className="h-3 w-3 mr-1" /> {registry.phone}
+                        {registry && !registry.isOwner && (
+                          <span className="ml-2 text-xs bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 dark:bg-amber-900 dark:text-amber-300">
+                            Affittuario
                           </span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(item.id)}
-                        >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        {registry && (
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col space-y-1 text-sm">
+                          {registry?.contactPerson && (
+                            <span>{registry.contactPerson}</span>
+                          )}
+                          {registry?.squareMeters ? (
+                            <span className="text-xs text-muted-foreground">
+                              <BedDouble className="h-3 w-3 inline mr-1" /> 
+                              {registry.squareMeters} m²
+                            </span>
+                          ) : null}
+                          {registry?.thousandthQuota ? (
+                            <span className="text-xs text-muted-foreground">
+                              Millesimi: {registry.thousandthQuota}
+                            </span>
+                          ) : null}
+                          {registry?.email && (
+                            <span className="flex items-center text-xs text-muted-foreground">
+                              <Mail className="h-3 w-3 mr-1" /> {registry.email}
+                            </span>
+                          )}
+                          {registry?.phone && (
+                            <span className="flex items-center text-xs text-muted-foreground">
+                              <Phone className="h-3 w-3 mr-1" /> {registry.phone}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleDelete(registry.id)}
+                            onClick={() => handleEdit(item.id)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <FileEdit className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+                          {registry && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(registry.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        )}
       </CardContent>
       
+      {/* Dialog per la modifica dell'anagrafica utenza */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
@@ -421,6 +505,7 @@ const OfficeRegistryManager: React.FC = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Dialog per la modifica della proprietà */}
       <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -479,6 +564,138 @@ const OfficeRegistryManager: React.FC = () => {
             </Button>
             <Button onClick={handleSaveProperty}>
               Salva
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog per aggiungere una nuova proprietà */}
+      <Dialog open={newGroupDialogOpen} onOpenChange={setNewGroupDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Aggiungi Nuova Proprietà</DialogTitle>
+            <DialogDescription>
+              Configura una nuova proprietà o condominio per gestire le utenze.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="newPropertyName">Nome Proprietà*</Label>
+              <Input
+                id="newPropertyName"
+                placeholder="Es. Condominio Rosa, Uffici Centro"
+                value={newGroupData.name}
+                onChange={(e) => setNewGroupData({
+                  ...newGroupData,
+                  name: e.target.value
+                })}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="newPropertyType">Tipo Proprietà</Label>
+              <Input
+                id="newPropertyType"
+                placeholder="Es. Palazzina, Uffici, Fabbricato"
+                value={newGroupData.propertyType}
+                onChange={(e) => setNewGroupData({
+                  ...newGroupData,
+                  propertyType: e.target.value
+                })}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="newPropertyNumber">Numero/Identificativo</Label>
+              <Input
+                id="newPropertyNumber"
+                placeholder="Es. 1, 2, A, B"
+                value={newGroupData.propertyNumber}
+                onChange={(e) => setNewGroupData({
+                  ...newGroupData,
+                  propertyNumber: e.target.value
+                })}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="newPropertyType">Tipo Principale</Label>
+              <div className="flex gap-4 pt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="typeOffice"
+                    name="propertyType"
+                    value="office"
+                    checked={newGroupData.type === 'office'}
+                    onChange={() => setNewGroupData({
+                      ...newGroupData,
+                      type: 'office'
+                    })}
+                  />
+                  <Label htmlFor="typeOffice" className="cursor-pointer">Uffici</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    id="typeAC"
+                    name="propertyType"
+                    value="ac"
+                    checked={newGroupData.type === 'ac'}
+                    onChange={() => setNewGroupData({
+                      ...newGroupData,
+                      type: 'ac'
+                    })}
+                  />
+                  <Label htmlFor="typeAC" className="cursor-pointer">Aria Condizionata</Label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewGroupDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={handleAddGroup}
+              disabled={!newGroupData.name.trim()}
+            >
+              Aggiungi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog di conferma eliminazione proprietà */}
+      <Dialog open={deletePropertyDialogOpen} onOpenChange={setDeletePropertyDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Elimina Proprietà</DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler eliminare questa proprietà? Questa azione è irreversibile e tutti i dati associati andranno persi.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex items-center p-3 bg-amber-50 text-amber-900 rounded-md">
+              <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+              <p className="text-sm">
+                Verranno eliminati tutti i dati relativi a questa proprietà, inclusi consumi, anagrafiche e ripartizioni.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletePropertyDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteProperty}
+            >
+              Elimina
             </Button>
           </DialogFooter>
         </DialogContent>

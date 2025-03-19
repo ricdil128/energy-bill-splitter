@@ -131,9 +131,7 @@ export function groupConsumptionData(
     
     if (!result[groupId]) {
       result[groupId] = {
-        name: group?.name || 
-              (groupId === GROUP_COLABORA1 ? 'Collabora 1' : 
-              groupId === GROUP_COLABORA2 ? 'Collabora 2' : 'Altro'),
+        name: group?.name || 'Altro',
         propertyType: group?.propertyType,
         propertyNumber: group?.propertyNumber,
         items: [],

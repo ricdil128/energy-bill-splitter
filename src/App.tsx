@@ -9,24 +9,27 @@ import Index from './pages/Index';
 import { Toaster } from './components/ui/toaster';
 import { EnergyProvider } from './context/EnergyContext';
 import React from 'react';
+import { AuthProvider } from './hooks/useAuth';
 
 function App() {
   return (
     <React.StrictMode>
-      <EnergyProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="auth" element={<Auth />} />
-              <Route path="history" element={<History />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-          <Toaster />
-        </Router>
-      </EnergyProvider>
+      <AuthProvider>
+        <EnergyProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Index />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="auth" element={<Auth />} />
+                <Route path="history" element={<History />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+            <Toaster />
+          </Router>
+        </EnergyProvider>
+      </AuthProvider>
     </React.StrictMode>
   );
 }

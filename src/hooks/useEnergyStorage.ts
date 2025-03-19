@@ -1,17 +1,19 @@
 
 import { useState, useEffect } from 'react';
-import { CalculationResult } from '@/types';
-import { STORAGE_KEY } from '@/context/energy-context-types';
+import { CalculationResult, ConsumptionGroup } from '@/types';
+import { STORAGE_KEY, DEFAULT_GROUPS } from '@/context/energy-context-types';
 
 export interface StorageData {
   results: CalculationResult[];
   thresholds: Record<string, number>;
+  groups?: ConsumptionGroup[];
 }
 
 export function useEnergyStorage() {
   const [storedData, setStoredData] = useState<StorageData>({ 
     results: [], 
-    thresholds: {} 
+    thresholds: {},
+    groups: DEFAULT_GROUPS
   });
 
   // Load saved results from localStorage
@@ -37,7 +39,8 @@ export function useEnergyStorage() {
         
         setStoredData({
           results: processedResults,
-          thresholds: parsed.thresholds || {}
+          thresholds: parsed.thresholds || {},
+          groups: parsed.groups || DEFAULT_GROUPS
         });
       } catch (error) {
         console.error("Failed to parse saved data:", error);

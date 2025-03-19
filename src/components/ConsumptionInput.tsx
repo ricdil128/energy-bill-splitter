@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/table";
 import { toast } from 'sonner';
 import { useEnergy } from '@/context/EnergyContext';
-import { Building2, Cable, Zap, RefreshCw, EuroIcon } from 'lucide-react';
+import { Building2, Cable, Zap, RefreshCw, EuroIcon, ServerIcon } from 'lucide-react';
+import { GROUP_COLABORA1, GROUP_COLABORA2 } from '@/context/energy-context-types';
 
 interface ConsumptionInputProps {
   type: ConsumptionType;
@@ -31,10 +32,14 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     currentResult,
     updateConsumption,
     resetConsumptionData,
+    groupedOfficeData,
+    groupedAcData
   } = useEnergy();
   
   const data = type === 'office' ? officeData : acData;
+  const groupedData = type === 'office' ? groupedOfficeData : groupedAcData;
   const [activeTab, setActiveTab] = useState<string>('table');
+  const [activeGroupTab, setActiveGroupTab] = useState<string>(GROUP_COLABORA1);
   
   // Handle consumption change
   const handleChange = (id: string, value: string) => {
@@ -68,8 +73,23 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     }
   };
 
-  // Total kWh
-  const totalKwh = data.reduce((sum, item) => sum + item.kwh, 0);
+  // Get total kWh for the active group
+  const getGroupTotal = (groupId: string) => {
+    return data
+      .filter(item => item.groupId === groupId && !item.isGeneral)
+      .reduce((sum, item) => sum + item.kwh, 0);
+  };
+  
+  const getGroupGeneralTotal = (groupId: string) => {
+    return data
+      .filter(item => item.groupId === groupId && item.isGeneral)
+      .reduce((sum, item) => sum + item.kwh, 0);
+  };
+  
+  // Total kWh for all items
+  const totalKwh = data
+    .filter(item => !item.isGeneral)
+    .reduce((sum, item) => sum + item.kwh, 0);
   
   const icon = type === 'office' ? <Building2 className="h-5 w-5" /> : <Cable className="h-5 w-5" />;
   
@@ -83,6 +103,17 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     
     const item = resultData.find(d => d.id === id);
     return item?.cost;
+  };
+  
+  // Get items for the active group
+  const getActiveGroupItems = () => {
+    const groupItems = groupedData[activeGroupTab]?.items || [];
+    return groupItems;
+  };
+  
+  // Get general counters for the active group
+  const getActiveGroupGeneralCounters = () => {
+    return groupedData[activeGroupTab]?.generalCounters || [];
   };
   
   return (
@@ -100,6 +131,23 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
       </CardHeader>
       
       <CardContent className="pb-2">
+        <Tabs value={activeGroupTab} onValueChange={setActiveGroupTab} className="w-full mb-4">
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value={GROUP_COLABORA1}>Colabora 1</TabsTrigger>
+            <TabsTrigger value={GROUP_COLABORA2}>Colabora 2</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex justify-between mb-4">
+          <Badge variant="secondary" className="px-2 py-1 text-sm">
+            Gruppo: {activeGroupTab === GROUP_COLABORA1 ? 'Colabora 1' : 'Colabora 2'}
+          </Badge>
+          <Badge variant="outline" className="px-2 py-1 text-sm">
+            <Zap className="h-3.5 w-3.5 mr-1 inline-block" />
+            Totale Gruppo: {getGroupTotal(activeGroupTab).toFixed(2)} kWh
+          </Badge>
+        </div>
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="table">Tabella Dati</TabsTrigger>
@@ -107,7 +155,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
           </TabsList>
           
           <TabsContent value="table" className="mt-0">
-            <ScrollArea className="h-[400px] pr-4">
+            <ScrollArea className="h-[350px] pr-4">
               <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
@@ -117,7 +165,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.map((item) => (
+                  {getActiveGroupItems().map((item) => (
                     <TableRow key={item.id} className="group">
                       <TableCell>{item.name}</TableCell>
                       <TableCell>
@@ -147,6 +195,64 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  
+                  {/* Contatori generali (solo per AC) */}
+                  {type === 'ac' && getActiveGroupGeneralCounters().length > 0 && (
+                    <>
+                      <TableRow>
+                        <TableCell colSpan={3} className="bg-muted/50">
+                          <div className="flex items-center gap-2 font-medium">
+                            <ServerIcon className="h-4 w-4" />
+                            Contatori Generali
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {getActiveGroupGeneralCounters().map((item) => (
+                        <TableRow key={item.id} className="group bg-muted/20">
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={item.kwh || ''}
+                                onChange={(e) => handleChange(item.id, e.target.value)}
+                                className="max-w-[100px]"
+                              />
+                              <span className="text-sm text-gray-500">kWh</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getCalculatedCost(item.id) ? (
+                                <div className="flex items-center">
+                                  <EuroIcon className="h-4 w-4 mr-1 text-green-600" />
+                                  <span>{getCalculatedCost(item.id)?.toFixed(2)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground italic text-sm">N/D</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      
+                      {/* Totale contatori generali */}
+                      {type === 'ac' && getActiveGroupGeneralCounters().length > 0 && (
+                        <TableRow className="bg-muted/10">
+                          <TableCell>Totale Contatori Generali</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 font-medium">
+                              <span>{getGroupGeneralTotal(activeGroupTab).toFixed(2)} kWh</span>
+                            </div>
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  )}
                 </TableBody>
               </Table>
             </ScrollArea>
@@ -174,10 +280,10 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => resetConsumptionData(type)}
+          onClick={() => resetConsumptionData(type, activeGroupTab)}
           className="flex items-center gap-1 ml-auto"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati
+          <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati Gruppo
         </Button>
       </CardFooter>
     </Card>

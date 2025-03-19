@@ -6,12 +6,21 @@ export interface ConsumptionData {
   cost?: number; // Calculated based on total bill
   percentage?: number; // Percentage of total consumption
   month?: string; // Optional month data for historical tracking
+  groupId?: string; // Group identifier for grouping consumption data
+  isGeneral?: boolean; // Flag for general counter
+}
+
+export interface ConsumptionGroup {
+  id: string;
+  name: string;
+  type: ConsumptionType;
 }
 
 export interface BillData {
   totalAmount: number;
   billDate: Date;
   description?: string;
+  groupId?: string; // Group identifier
 }
 
 export type ConsumptionType = 'office' | 'ac';
@@ -26,6 +35,7 @@ export interface CalculationResult {
   date: Date;
   id: string;
   month?: string; // Month this calculation represents
+  groups?: ConsumptionGroup[]; // Groups information
 }
 
 export interface ThresholdAlert {
@@ -42,4 +52,14 @@ export interface MonthlyConsumption {
   acTotal: number;
   officeCost: number;
   acCost: number;
+  groupId?: string; // Group identifier
+}
+
+// Group structure for organizing consumption data
+export interface GroupedConsumptionData {
+  [groupId: string]: {
+    name: string;
+    items: ConsumptionData[];
+    generalCounters?: ConsumptionData[];
+  };
 }

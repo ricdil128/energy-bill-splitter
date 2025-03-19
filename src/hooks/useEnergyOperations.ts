@@ -1,32 +1,73 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ConsumptionData, 
   BillData, 
   CalculationResult, 
-  ConsumptionType 
+  ConsumptionType,
+  ConsumptionGroup,
+  GroupedConsumptionData
 } from '@/types';
 import { 
-  generateInitialConsumptionData, 
+  generateInitialConsumptionData,
+  generateGeneralCounters,
   performFullCalculation,
-  checkThreshold
+  checkThreshold,
+  groupConsumptionData
 } from '@/utils/calculations';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { StorageData } from './useEnergyStorage';
+import { 
+  DEFAULT_GROUPS, 
+  GROUP_COLABORA1, 
+  GROUP_COLABORA2 
+} from '@/context/energy-context-types';
 
 export function useEnergyOperations(
   initialData: StorageData,
   onDataChange: (data: StorageData) => void
 ) {
-  // Initialize state for consumption data
-  const [officeData, setOfficeData] = useState<ConsumptionData[]>(() => 
-    generateInitialConsumptionData(9, 'office')
+  // Initialize groups
+  const [groups, setGroups] = useState<ConsumptionGroup[]>(
+    initialData.groups || DEFAULT_GROUPS
   );
   
-  const [acData, setAcData] = useState<ConsumptionData[]>(() => 
-    generateInitialConsumptionData(15, 'ac')
+  // Initialize state for consumption data
+  const [officeData, setOfficeData] = useState<ConsumptionData[]>(() => {
+    const colabora1Offices = generateInitialConsumptionData(9, 'office', GROUP_COLABORA1, 'Ufficio');
+    const colabora2Offices = generateInitialConsumptionData(6, 'office', GROUP_COLABORA2, 'Ufficio');
+    return [...colabora1Offices, ...colabora2Offices];
+  });
+  
+  const [acData, setAcData] = useState<ConsumptionData[]>(() => {
+    const colabora1AC = generateInitialConsumptionData(9, 'ac', GROUP_COLABORA1, 'AC');
+    const colabora2AC = generateInitialConsumptionData(6, 'ac', GROUP_COLABORA2, 'AC');
+    
+    // General counters
+    const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Colabora 1');
+    const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Colabora 2');
+    
+    return [...colabora1AC, ...colabora2AC, ...colabora1General, ...colabora2General];
+  });
+  
+  // Group consumption data for easier access
+  const [groupedOfficeData, setGroupedOfficeData] = useState<GroupedConsumptionData>(
+    groupConsumptionData(officeData)
   );
+  
+  const [groupedAcData, setGroupedAcData] = useState<GroupedConsumptionData>(
+    groupConsumptionData(acData)
+  );
+  
+  // Update grouped data when raw data changes
+  useEffect(() => {
+    setGroupedOfficeData(groupConsumptionData(officeData));
+  }, [officeData]);
+  
+  useEffect(() => {
+    setGroupedAcData(groupConsumptionData(acData));
+  }, [acData]);
   
   // Initialize bills
   const [officeBill, setOfficeBill] = useState<BillData>({
@@ -40,9 +81,21 @@ export function useEnergyOperations(
   });
   
   // Initialize results and thresholds
-  const [results, setResults] = useState<CalculationResult[]>(initialData.results);
+  const [results, setResults] = useState<CalculationResult[]>(initialData.results || []);
   const [currentResult, setCurrentResult] = useState<CalculationResult | null>(null);
-  const [thresholds, setThresholds] = useState<Record<string, number>>(initialData.thresholds);
+  const [thresholds, setThresholds] = useState<Record<string, number>>(initialData.thresholds || {});
+  
+  // Helper method to get items for a specific group
+  const getGroupItems = (type: ConsumptionType, groupId: string): ConsumptionData[] => {
+    const data = type === 'office' ? officeData : acData;
+    return data.filter(item => item.groupId === groupId && !item.isGeneral);
+  };
+  
+  // Helper method to get general counters for a specific group
+  const getGroupGeneralCounters = (type: ConsumptionType, groupId: string): ConsumptionData[] => {
+    const data = type === 'office' ? officeData : acData;
+    return data.filter(item => item.groupId === groupId && item.isGeneral);
+  };
   
   // Update consumption data for a specific item
   const updateConsumption = (type: ConsumptionType, id: string, kwh: number) => {
@@ -62,11 +115,11 @@ export function useEnergyOperations(
   };
   
   // Update bill amount
-  const updateBillAmount = (type: ConsumptionType, amount: number) => {
+  const updateBillAmount = (type: ConsumptionType, amount: number, groupId?: string) => {
     if (type === 'office') {
-      setOfficeBill(prev => ({ ...prev, totalAmount: amount }));
+      setOfficeBill(prev => ({ ...prev, totalAmount: amount, groupId }));
     } else {
-      setAcBill(prev => ({ ...prev, totalAmount: amount }));
+      setAcBill(prev => ({ ...prev, totalAmount: amount, groupId }));
     }
   };
   
@@ -78,8 +131,13 @@ export function useEnergyOperations(
       return;
     }
     
-    const officeKwhTotal = officeData.reduce((sum, item) => sum + item.kwh, 0);
-    const acKwhTotal = acData.reduce((sum, item) => sum + item.kwh, 0);
+    const officeKwhTotal = officeData
+      .filter(item => !item.isGeneral)
+      .reduce((sum, item) => sum + item.kwh, 0);
+      
+    const acKwhTotal = acData
+      .filter(item => !item.isGeneral)
+      .reduce((sum, item) => sum + item.kwh, 0);
     
     if (officeKwhTotal <= 0 || acKwhTotal <= 0) {
       toast.error("Please enter consumption data");
@@ -87,7 +145,7 @@ export function useEnergyOperations(
     }
     
     // Perform calculations
-    const result = performFullCalculation(officeData, acData, officeBill, acBill);
+    const result = performFullCalculation(officeData, acData, officeBill, acBill, groups);
     setCurrentResult(result);
     
     // Add to results history
@@ -97,7 +155,8 @@ export function useEnergyOperations(
     // Save to storage
     onDataChange({
       results: updatedResults,
-      thresholds
+      thresholds,
+      groups
     });
     
     // Check for threshold alerts
@@ -124,21 +183,51 @@ export function useEnergyOperations(
     // Save to storage
     onDataChange({
       results,
-      thresholds: updatedThresholds
+      thresholds: updatedThresholds,
+      groups
     });
     
     toast.success(`Threshold set for ${type === 'office' ? 'Office' : 'AC'}`);
   };
   
   // Reset consumption data
-  const resetConsumptionData = (type: ConsumptionType) => {
+  const resetConsumptionData = (type: ConsumptionType, groupId?: string) => {
     if (type === 'office') {
-      setOfficeData(generateInitialConsumptionData(9, 'office'));
+      if (groupId) {
+        // Reset only specific group
+        setOfficeData(prev => {
+          return prev.map(item => 
+            item.groupId === groupId ? { ...item, kwh: 0 } : item
+          );
+        });
+      } else {
+        // Reset all office data
+        const colabora1Offices = generateInitialConsumptionData(9, 'office', GROUP_COLABORA1, 'Ufficio');
+        const colabora2Offices = generateInitialConsumptionData(6, 'office', GROUP_COLABORA2, 'Ufficio');
+        setOfficeData([...colabora1Offices, ...colabora2Offices]);
+      }
     } else {
-      setAcData(generateInitialConsumptionData(15, 'ac'));
+      if (groupId) {
+        // Reset only specific group
+        setAcData(prev => {
+          return prev.map(item => 
+            item.groupId === groupId ? { ...item, kwh: 0 } : item
+          );
+        });
+      } else {
+        // Reset all AC data
+        const colabora1AC = generateInitialConsumptionData(9, 'ac', GROUP_COLABORA1, 'AC');
+        const colabora2AC = generateInitialConsumptionData(6, 'ac', GROUP_COLABORA2, 'AC');
+        
+        // General counters
+        const colabora1General = generateGeneralCounters(1, GROUP_COLABORA1, 'Colabora 1');
+        const colabora2General = generateGeneralCounters(2, GROUP_COLABORA2, 'Colabora 2');
+        
+        setAcData([...colabora1AC, ...colabora2AC, ...colabora1General, ...colabora2General]);
+      }
     }
     
-    toast.info(`${type === 'office' ? 'Office' : 'AC'} data reset`);
+    toast.info(`${type === 'office' ? 'Office' : 'AC'} data reset${groupId ? ' for group' : ''}`);
   };
   
   // Load a specific result
@@ -158,7 +247,8 @@ export function useEnergyOperations(
     // Save to storage
     onDataChange({
       results: updatedResults,
-      thresholds
+      thresholds,
+      groups
     });
     
     if (currentResult?.id === id) {
@@ -176,12 +266,17 @@ export function useEnergyOperations(
     results,
     currentResult,
     thresholds,
+    groups,
+    groupedOfficeData,
+    groupedAcData,
     updateConsumption,
     updateBillAmount,
     calculateResults,
     setThreshold,
     resetConsumptionData,
     loadResult,
-    deleteResult
+    deleteResult,
+    getGroupItems,
+    getGroupGeneralCounters
   };
 }

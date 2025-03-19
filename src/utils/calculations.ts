@@ -1,6 +1,7 @@
 
-import { ConsumptionData, BillData, CalculationResult, ConsumptionType } from '@/types';
+import { ConsumptionData, BillData, CalculationResult, ConsumptionType, ConsumptionGroup, GroupedConsumptionData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { GROUP_COLABORA1, GROUP_COLABORA2 } from '@/context/energy-context-types';
 
 /**
  * Calculate the cost and percentage for each consumption entry
@@ -40,13 +41,14 @@ export function performFullCalculation(
   officeData: ConsumptionData[],
   acData: ConsumptionData[],
   officeBill: BillData,
-  acBill: BillData
+  acBill: BillData,
+  groups: ConsumptionGroup[]
 ): CalculationResult {
   const updatedOfficeData = calculateCostsAndPercentages(officeData, officeBill.totalAmount);
   const updatedAcData = calculateCostsAndPercentages(acData, acBill.totalAmount);
   
-  const officeTotal = updatedOfficeData.reduce((sum, entry) => sum + entry.kwh, 0);
-  const acTotal = updatedAcData.reduce((sum, entry) => sum + entry.kwh, 0);
+  const officeTotal = updatedOfficeData.reduce((sum, entry) => sum + (entry.isGeneral ? 0 : entry.kwh), 0);
+  const acTotal = updatedAcData.reduce((sum, entry) => sum + (entry.isGeneral ? 0 : entry.kwh), 0);
   
   return {
     officeData: updatedOfficeData,
@@ -56,7 +58,8 @@ export function performFullCalculation(
     officeTotal,
     acTotal,
     date: new Date(),
-    id: uuidv4()
+    id: uuidv4(),
+    groups: [...groups]
   };
 }
 
@@ -79,15 +82,65 @@ export function checkThreshold(
  */
 export function generateInitialConsumptionData(
   count: number,
-  type: ConsumptionType
+  type: ConsumptionType,
+  groupId: string,
+  groupName: string
 ): ConsumptionData[] {
   return Array.from({ length: count }, (_, i) => ({
     id: uuidv4(),
-    name: `${type === 'office' ? 'Office' : 'AC'} ${i + 1}`,
+    name: `${groupName} ${i + 1}`,
     kwh: 0,
     cost: 0,
-    percentage: 0
+    percentage: 0,
+    groupId
   }));
+}
+
+/**
+ * Generate general counters for AC
+ */
+export function generateGeneralCounters(
+  count: number,
+  groupId: string,
+  groupName: string
+): ConsumptionData[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: uuidv4(),
+    name: `Contatore Generale ${groupName} ${count > 1 ? (i + 1) : ''}`,
+    kwh: 0,
+    cost: 0,
+    percentage: 0,
+    groupId,
+    isGeneral: true
+  }));
+}
+
+/**
+ * Group consumption data by groupId
+ */
+export function groupConsumptionData(data: ConsumptionData[]): GroupedConsumptionData {
+  const result: GroupedConsumptionData = {};
+  
+  data.forEach(item => {
+    const groupId = item.groupId || 'default';
+    
+    if (!result[groupId]) {
+      result[groupId] = {
+        name: item.groupId === GROUP_COLABORA1 ? 'Colabora 1' : 
+              item.groupId === GROUP_COLABORA2 ? 'Colabora 2' : 'Altro',
+        items: [],
+        generalCounters: []
+      };
+    }
+    
+    if (item.isGeneral) {
+      result[groupId].generalCounters!.push(item);
+    } else {
+      result[groupId].items.push(item);
+    }
+  });
+  
+  return result;
 }
 
 /**
@@ -97,21 +150,41 @@ export function exportToCSV(result: CalculationResult): string {
   const rows: string[] = [];
   
   // Add headers
-  rows.push('Type,Name,kWh,Cost (€),Percentage (%)');
+  rows.push('Group,Type,Name,kWh,Cost (€),Percentage (%),IsGeneral');
+  
+  // Group data
+  const groupedOffice = groupConsumptionData(result.officeData);
+  const groupedAC = groupConsumptionData(result.acData);
   
   // Add office data
-  result.officeData.forEach(entry => {
-    rows.push(`Office,${entry.name},${entry.kwh},${entry.cost},${entry.percentage}`);
+  Object.entries(groupedOffice).forEach(([groupId, group]) => {
+    group.items.forEach(entry => {
+      rows.push(`${group.name},Office,${entry.name},${entry.kwh},${entry.cost},${entry.percentage},No`);
+    });
+    
+    if (group.generalCounters && group.generalCounters.length > 0) {
+      group.generalCounters.forEach(entry => {
+        rows.push(`${group.name},Office,${entry.name},${entry.kwh},${entry.cost},${entry.percentage},Yes`);
+      });
+    }
   });
   
   // Add AC data
-  result.acData.forEach(entry => {
-    rows.push(`AC,${entry.name},${entry.kwh},${entry.cost},${entry.percentage}`);
+  Object.entries(groupedAC).forEach(([groupId, group]) => {
+    group.items.forEach(entry => {
+      rows.push(`${group.name},AC,${entry.name},${entry.kwh},${entry.cost},${entry.percentage},No`);
+    });
+    
+    if (group.generalCounters && group.generalCounters.length > 0) {
+      group.generalCounters.forEach(entry => {
+        rows.push(`${group.name},AC,${entry.name},${entry.kwh},${entry.cost},${entry.percentage},Yes`);
+      });
+    }
   });
   
   // Add totals
-  rows.push(`Total,Offices,${result.officeTotal},${result.officeBill.totalAmount},100`);
-  rows.push(`Total,Air Conditioning,${result.acTotal},${result.acBill.totalAmount},100`);
+  rows.push(`Total,Offices,All,${result.officeTotal},${result.officeBill.totalAmount},100,No`);
+  rows.push(`Total,Air Conditioning,All,${result.acTotal},${result.acBill.totalAmount},100,No`);
   
   return rows.join('\n');
 }

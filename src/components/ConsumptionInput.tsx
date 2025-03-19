@@ -162,7 +162,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                   {getActiveGroupItems().map((item) => (
                     <TableRow key={item.id} className="group">
                       <TableCell>
-                        {getCompanyName(item.id, item.name)}
+                        {getCompanyName(item.id, type, item.name)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => resetConsumptionData(type, activeGroupTab)}
+          onClick={() => resetConsumptionData(type, activeGroupTab as ConsumptionType)}
           className="flex items-center gap-1 ml-auto"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati Gruppo

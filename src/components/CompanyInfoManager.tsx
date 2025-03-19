@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useEnergy } from '@/context/EnergyContext';
 import { CompanyInfo } from '@/types';
@@ -31,13 +30,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useForm } from 'react-hook-form';
-import { Building, Building2, Users, Save } from 'lucide-react';
+import { Building, Building2, Users, Save, RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
 const CompanyInfoManager: React.FC = () => {
   const { companyInfo, saveCompanyInfo } = useEnergy();
   const [activeTab, setActiveTab] = useState<'company' | 'condominium'>('company');
+  const [savedCompanies, setSavedCompanies] = useState<CompanyInfo[]>([]);
   
   // Form setup
   const form = useForm<CompanyInfo>({
@@ -55,6 +55,12 @@ const CompanyInfoManager: React.FC = () => {
       logoUrl: ''
     }
   });
+  
+  // Fetch saved companies from localStorage on component mount
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('saved-companies') || '[]');
+    setSavedCompanies(saved);
+  }, []);
   
   // Update form when companyInfo changes
   useEffect(() => {
@@ -77,6 +83,31 @@ const CompanyInfoManager: React.FC = () => {
     form.setValue('type', value as 'company' | 'condominium');
   };
   
+  // Clear form fields
+  const clearForm = () => {
+    form.reset({
+      id: '',
+      name: '',
+      type: activeTab,
+      address: '',
+      vatNumber: '',
+      administrator: {
+        name: '',
+        email: '',
+        phone: ''
+      },
+      logoUrl: ''
+    });
+    toast.success('Campi azzerati');
+  };
+  
+  // Load a saved company/condominium
+  const loadSavedEntity = (entity: CompanyInfo) => {
+    form.reset(entity);
+    setActiveTab(entity.type);
+    toast.success(`${entity.type === 'company' ? 'Azienda' : 'Condominio'} "${entity.name}" caricato`);
+  };
+  
   // Handle form submission
   const onSubmit = async (data: CompanyInfo) => {
     try {
@@ -87,7 +118,23 @@ const CompanyInfoManager: React.FC = () => {
       
       const success = await saveCompanyInfo(data);
       if (success) {
+        // Save to local storage as well
+        const existing = JSON.parse(localStorage.getItem('saved-companies') || '[]');
+        const existingIndex = existing.findIndex((item: CompanyInfo) => item.id === data.id);
+        
+        if (existingIndex >= 0) {
+          existing[existingIndex] = data;
+        } else {
+          existing.push(data);
+        }
+        
+        localStorage.setItem('saved-companies', JSON.stringify(existing));
+        setSavedCompanies(existing);
+        
         toast.success(`${data.type === 'company' ? 'Azienda' : 'Condominio'} salvato con successo`);
+        
+        // Clear form after successful save
+        clearForm();
       }
     } catch (error) {
       console.error('Error saving company info:', error);
@@ -118,6 +165,27 @@ const CompanyInfoManager: React.FC = () => {
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        
+        {savedCompanies.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium mb-2">Entità Salvate</h3>
+            <ScrollArea className="h-[100px] w-full border rounded-md p-2">
+              <div className="flex flex-wrap gap-2">
+                {savedCompanies.map((entity) => (
+                  <Button 
+                    key={entity.id} 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => loadSavedEntity(entity)}
+                  >
+                    {entity.type === 'company' ? <Building2 className="h-3 w-3 mr-1" /> : <Users className="h-3 w-3 mr-1" />}
+                    {entity.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -229,10 +297,16 @@ const CompanyInfoManager: React.FC = () => {
               )}
             />
             
-            <Button type="submit" className="w-full">
-              <Save className="h-4 w-4 mr-2" />
-              Salva {activeTab === 'company' ? 'Azienda' : 'Condominio'}
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button type="submit" className="flex-1">
+                <Save className="h-4 w-4 mr-2" />
+                Salva {activeTab === 'company' ? 'Azienda' : 'Condominio'}
+              </Button>
+              <Button type="button" variant="outline" onClick={clearForm}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Azzera Campi
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>

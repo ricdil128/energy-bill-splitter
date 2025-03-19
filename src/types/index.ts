@@ -1,4 +1,3 @@
-
 export interface ConsumptionData {
   id: string;
   name: string;
@@ -10,6 +9,7 @@ export interface ConsumptionData {
   isGeneral?: boolean; // Flag for general counter
   squareMeters?: number; // Square meters of the property/unit
   thousandthQuota?: number; // "Quota millesimale" for condominium calculations
+  type?: ConsumptionType; // Type of consumption (office or ac)
 }
 
 export interface ConsumptionGroup {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { OfficeRegistry, ConsumptionType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,9 +142,13 @@ export function useOfficeRegistry() {
   };
 
   // Ottieni il nome dell'azienda per un consumo specifico
-  const getCompanyName = (consumptionId: string, defaultName: string): string => {
-    const registry = registries.find(r => r.consumptionId === consumptionId);
-    return registry?.companyName || defaultName;
+  const getCompanyName = (consumptionId: string, type?: ConsumptionType, defaultName?: string): string => {
+    const registry = registries.find(r => 
+      r.consumptionId === consumptionId && 
+      (type ? r.consumptionType === type : true)
+    );
+    
+    return registry?.companyName || defaultName || 'Senza nome';
   };
 
   // Ottieni l'anagrafica completa per un consumo specifico

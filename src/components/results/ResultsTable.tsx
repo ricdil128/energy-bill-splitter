@@ -33,7 +33,9 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
         <TableBody>
           {data.map((item) => (
             <TableRow key={item.id}>
-              <TableCell>{getCompanyName(item.id, item.name)}</TableCell>
+              <TableCell>
+                {getCompanyName(item.id, item.type, item.name)}
+              </TableCell>
               <TableCell>{item.kwh.toFixed(2)}</TableCell>
               <TableCell>{item.cost?.toFixed(2) || 0}</TableCell>
               <TableCell>{item.percentage?.toFixed(2) || 0}%</TableCell>

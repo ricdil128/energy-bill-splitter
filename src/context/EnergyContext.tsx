@@ -12,11 +12,14 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   // Get storage functionality
   const { storedData, saveData } = useEnergyStorage();
   
+  // Get office registry
+  const officeRegistry = useOfficeRegistry();
+  
   // Get energy operations with storage data
   const energyOperations = useEnergyOperations(storedData, saveData);
   
   return (
-    <EnergyContext.Provider value={energyOperations}>
+    <EnergyContext.Provider value={{...energyOperations}}>
       {children}
     </EnergyContext.Provider>
   );

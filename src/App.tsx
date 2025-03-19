@@ -8,6 +8,7 @@ import History from './pages/History';
 import Index from './pages/Index';
 import { Toaster } from './components/ui/toaster';
 import { EnergyProvider } from './context/EnergyContext';
+import React from 'react';
 
 function App() {
   return (

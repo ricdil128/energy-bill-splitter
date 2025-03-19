@@ -21,7 +21,7 @@ export interface StorageData {
   acBill?: BillData | null;
   results?: CalculationResult[];
   groups?: ConsumptionGroup[];
-  thresholds?: Record<string, number>;
+  thresholds?: ThresholdAlert[]; // Changed from Record<string, number> to ThresholdAlert[]
   monthlyConsumptionData?: MonthlyConsumption[];
 }
 

@@ -30,13 +30,7 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (data.results) energyStorage.setCalculationResults(data.results);
     if (data.groups) energyStorage.setConsumptionGroups(data.groups);
     if (data.thresholds) {
-      const thresholdAlerts = Object.entries(data.thresholds).map(([id, threshold]) => ({
-        consumptionId: id,
-        threshold,
-        type: id.includes('ac') ? 'ac' as ConsumptionType : 'office' as ConsumptionType,
-        active: true
-      }));
-      energyStorage.setThresholdAlerts(thresholdAlerts);
+      energyStorage.setThresholdAlerts(data.thresholds);
     }
   });
   

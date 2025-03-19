@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ConsumptionData, ConsumptionType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -44,7 +43,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
   const [activeTab, setActiveTab] = useState<string>('table');
   const [activeGroupTab, setActiveGroupTab] = useState<string>(GROUP_COLABORA1);
   
-  // Handle consumption change
   const handleChange = (id: string, value: string) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue >= 0) {
@@ -52,7 +50,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     }
   };
   
-  // Handle bulk import
   const handleBulkImport = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const lines = e.target.value.split('\n');
     let updated = 0;
@@ -62,7 +59,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
       const kwh = parseFloat(kwhStr);
       
       if (name && !isNaN(kwh) && kwh >= 0) {
-        // Find the item by name
         const item = data.find(d => d.name.toLowerCase() === name.toLowerCase());
         if (item) {
           updateConsumption(type, item.id, kwh);
@@ -76,7 +72,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     }
   };
 
-  // Get total kWh for the active group
   const getGroupTotal = (groupId: string) => {
     return data
       .filter(item => item.groupId === groupId && !item.isGeneral)
@@ -89,14 +84,12 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
       .reduce((sum, item) => sum + item.kwh, 0);
   };
   
-  // Total kWh for all items
   const totalKwh = data
     .filter(item => !item.isGeneral)
     .reduce((sum, item) => sum + item.kwh, 0);
   
   const icon = type === 'office' ? <Building2 className="h-5 w-5" /> : <Cable className="h-5 w-5" />;
   
-  // Get the corresponding data from calculation result if available
   const getCalculatedCost = (id: string) => {
     if (!currentResult) return null;
     
@@ -108,13 +101,11 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     return item?.cost;
   };
   
-  // Get items for the active group
   const getActiveGroupItems = () => {
     const groupItems = groupedData[activeGroupTab]?.items || [];
     return groupItems;
   };
   
-  // Get general counters for the active group
   const getActiveGroupGeneralCounters = () => {
     return groupedData[activeGroupTab]?.generalCounters || [];
   };
@@ -201,7 +192,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                     </TableRow>
                   ))}
                   
-                  {/* Contatori generali (solo per AC) */}
                   {type === 'ac' && getActiveGroupGeneralCounters().length > 0 && (
                     <>
                       <TableRow>
@@ -244,7 +234,6 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
                         </TableRow>
                       ))}
                       
-                      {/* Totale contatori generali */}
                       {type === 'ac' && getActiveGroupGeneralCounters().length > 0 && (
                         <TableRow className="bg-muted/10">
                           <TableCell>Totale Contatori Generali</TableCell>
@@ -285,7 +274,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => resetConsumptionData(type, activeGroupTab)}
+          onClick={() => resetConsumptionData(type, activeGroupTab as any)}
           className="flex items-center gap-1 ml-auto"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Azzera Dati Gruppo

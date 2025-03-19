@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEnergy } from '@/context/EnergyContext';
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
@@ -29,7 +28,6 @@ import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// Add declaration for jspdf-autotable
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -70,7 +68,6 @@ const PDFReportGenerator: React.FC = () => {
     );
   }
   
-  // Get consumption data for the selected type and group
   const getConsumptionData = () => {
     if (!currentResult) return [];
     
@@ -87,7 +84,6 @@ const PDFReportGenerator: React.FC = () => {
     );
   };
   
-  // Generate PDF for a single company/user
   const generateSinglePDF = (item: ConsumptionData): jsPDF => {
     const doc = new jsPDF();
     const title = selectedType === 'office' ? 'Consumo Ufficio' : 'Consumo Aria Condizionata';
@@ -97,7 +93,6 @@ const PDFReportGenerator: React.FC = () => {
     const bill = selectedType === 'office' ? currentResult.officeBill : currentResult.acBill;
     const group = currentResult.groups?.find(g => g.id === item.groupId);
     
-    // Add header - include company/condominium info if available and enabled
     let yPos = 20;
     
     if (includeCompanyHeader && companyInfo) {
@@ -132,14 +127,12 @@ const PDFReportGenerator: React.FC = () => {
     doc.text(`Data: ${date}`, 105, yPos, { align: 'center' });
     yPos += 15;
     
-    // Add property information if available
     if (group && group.propertyType) {
       doc.setFontSize(12);
       doc.text(`Proprietà: ${group.propertyType} ${group.propertyNumber} - ${group.name}`, 20, yPos);
       yPos += 10;
     }
     
-    // Add bill information
     doc.setFontSize(12);
     if (bill.providerName) {
       doc.text(`Fornitore: ${bill.providerName}`, 20, yPos);
@@ -151,7 +144,6 @@ const PDFReportGenerator: React.FC = () => {
       yPos += 7;
     }
     
-    // Add company/user information
     doc.setFontSize(16);
     doc.text(`Utenza: ${companyName}`, 20, yPos);
     yPos += 10;
@@ -192,13 +184,10 @@ const PDFReportGenerator: React.FC = () => {
       yPos += 3;
     }
     
-    // Add custom message
-    doc.setFontSize(11);
     const splitMessage = doc.splitTextToSize(customMessage, 170);
     doc.text(splitMessage, 20, yPos);
     yPos += splitMessage.length * 7 + 10;
     
-    // Add consumption table
     doc.autoTable({
       startY: yPos,
       head: [['Descrizione', 'kWh', 'Costo (€)', 'Percentuale']],
@@ -215,20 +204,17 @@ const PDFReportGenerator: React.FC = () => {
       margin: { top: 20 }
     });
     
-    // Add bill total
     const finalY = (doc as any).lastAutoTable.finalY + 20;
     
     doc.setFontSize(12);
     doc.text(`Totale Bolletta: ${bill.totalAmount.toFixed(2)} €`, 20, finalY);
     doc.text(`Quota a carico: ${item.cost?.toFixed(2) || '0.00'} €`, 20, finalY + 10);
     
-    // Add footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(10);
       
-      // Add company/administrator info in footer if available
       if (companyInfo?.administrator?.name) {
         doc.text(
           `Gestito da: ${companyInfo.administrator.name}`,
@@ -249,7 +235,6 @@ const PDFReportGenerator: React.FC = () => {
     return doc;
   };
   
-  // Generate PDFs for all selected companies/users
   const generateAllPDFs = () => {
     const items = getConsumptionData();
     
@@ -260,7 +245,6 @@ const PDFReportGenerator: React.FC = () => {
     
     try {
       if (items.length === 1) {
-        // Single report case
         const doc = generateSinglePDF(items[0]);
         const companyName = getCompanyName(items[0].id, items[0].name);
         const fileDate = format(currentResult.date, 'yyyy-MM-dd');
@@ -268,7 +252,6 @@ const PDFReportGenerator: React.FC = () => {
         
         toast.success('Report PDF generato con successo');
       } else {
-        // Multiple companies/users case
         const mergedPdf = new jsPDF();
         let isFirst = true;
         
@@ -276,20 +259,16 @@ const PDFReportGenerator: React.FC = () => {
           const doc = generateSinglePDF(item);
           
           if (!isFirst) {
-            // Add pages from second document onwards
             for (let i = 1; i <= doc.getNumberOfPages(); i++) {
               const pageData = doc.output('arraybuffer');
               mergedPdf.addPage();
               mergedPdf.addPage();
-              // Here we would ideally use a PDF merge library,
-              // but for simplicity we save separate files
             }
           }
           
           isFirst = false;
         });
         
-        // For simplicity, in this version we save a single file
         const fileDate = format(currentResult.date, 'yyyy-MM-dd');
         mergedPdf.save(`report-consumi-multipli-${fileDate}.pdf`);
         

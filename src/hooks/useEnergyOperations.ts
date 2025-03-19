@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { 
   ConsumptionData, 
   ConsumptionType, 
@@ -21,7 +22,7 @@ export const useEnergyOperations = (
   const acBill = storedData.acBill || { totalAmount: 0, billDate: new Date() };
   const results = storedData.results || [];
   const groups = storedData.groups || [];
-  const thresholds = storedData.thresholdAlerts?.reduce((acc, item) => {
+  const thresholds = storedData.thresholds?.reduce((acc, item) => {
     acc[item.consumptionId] = item.threshold;
     return acc;
   }, {} as Record<string, number>) || {};
@@ -133,7 +134,7 @@ export const useEnergyOperations = (
     const updatedThresholds = { ...thresholds, [id]: value };
     
     // Format for storage
-    const thresholdAlerts = Object.entries(updatedThresholds).map(([consumptionId, threshold]) => ({
+    const thresholdItems = Object.entries(updatedThresholds).map(([consumptionId, threshold]) => ({
       consumptionId,
       threshold,
       type: consumptionId.includes('ac') ? 'ac' as ConsumptionType : 'office' as ConsumptionType,
@@ -142,7 +143,7 @@ export const useEnergyOperations = (
     
     updateStorage({ 
       ...storedData, 
-      thresholdAlerts
+      thresholds: thresholdItems
     });
   };
   

@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
@@ -15,7 +15,7 @@ function App() {
   return (
     <AuthProvider>
       <EnergyProvider>
-        <Router>
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Index />} />
@@ -26,7 +26,7 @@ function App() {
             </Route>
           </Routes>
           <Toaster />
-        </Router>
+        </BrowserRouter>
       </EnergyProvider>
     </AuthProvider>
   );

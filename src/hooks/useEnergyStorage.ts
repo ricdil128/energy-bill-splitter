@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { CalculationResult, ConsumptionGroup } from '@/types';
 import { STORAGE_KEY, DEFAULT_GROUPS } from '@/context/energy-context-types';
@@ -21,7 +20,6 @@ export function useEnergyStorage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
 
-  // Controlla lo stato della connettività di rete
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -37,17 +35,14 @@ export function useEnergyStorage() {
     };
   }, []);
 
-  // Carica i dati da Supabase quando l'utente è autenticato
   useEffect(() => {
     async function loadDataFromSupabase() {
       try {
         setIsLoading(true);
         
-        // Verifica se l'utente è autenticato
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Carica i risultati dei calcoli
           const { data: resultsData, error: resultsError } = await supabase
             .from('calculation_results')
             .select('*')
@@ -55,21 +50,18 @@ export function useEnergyStorage() {
           
           if (resultsError) throw resultsError;
 
-          // Carica le soglie
           const { data: thresholdsData, error: thresholdsError } = await supabase
             .from('thresholds')
             .select('*');
           
           if (thresholdsError) throw thresholdsError;
 
-          // Carica i gruppi
           const { data: groupsData, error: groupsError } = await supabase
             .from('consumption_groups')
             .select('*');
           
           if (groupsError) throw groupsError;
 
-          // Processa i risultati
           const processedResults = resultsData.map((result: any) => ({
             id: result.id,
             date: new Date(result.date),
@@ -89,13 +81,11 @@ export function useEnergyStorage() {
             groups: result.groups || DEFAULT_GROUPS
           }));
 
-          // Converte le soglie in formato Record<string, number>
           const thresholdsRecord: Record<string, number> = {};
           thresholdsData.forEach((threshold: any) => {
             thresholdsRecord[threshold.consumption_id] = threshold.threshold_value;
           });
 
-          // Imposta i dati caricati
           setStoredData({
             results: processedResults,
             thresholds: thresholdsRecord,
@@ -105,17 +95,12 @@ export function useEnergyStorage() {
               type: g.type
             })) : DEFAULT_GROUPS
           });
-          
         } else {
-          // Se l'utente non è autenticato, carica da localStorage
           loadFromLocalStorage();
         }
       } catch (error) {
         console.error("Errore nel caricamento dei dati da Supabase:", error);
-        
-        // In caso di errore, carica da localStorage
         loadFromLocalStorage();
-        
         toast.error("Impossibile caricare i dati dal server. Utilizzo dati locali.");
       } finally {
         setIsLoading(false);
@@ -128,7 +113,6 @@ export function useEnergyStorage() {
         try {
           const parsed = JSON.parse(savedData);
           
-          // Converti string dates back to Date objects
           const processedResults = parsed.results.map((result: any) => ({
             ...result,
             date: new Date(result.date),
@@ -156,13 +140,10 @@ export function useEnergyStorage() {
     loadDataFromSupabase();
   }, []);
 
-  // Salva i dati su Supabase e localStorage
   const saveData = async (data: StorageData) => {
-    // Salva sempre in localStorage come backup
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setStoredData(data);
     
-    // Verifica se l'utente è autenticato e online per salvare su Supabase
     if (isOnline) {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -170,22 +151,18 @@ export function useEnergyStorage() {
         if (sessionData.session?.user) {
           const userId = sessionData.session.user.id;
           
-          // Salva i nuovi risultati che non sono ancora su Supabase
           const newResults = data.results.filter(result => 
             !result.id || result.id.length !== 36 || !result.id.includes('-')
           );
           
           for (const result of newResults) {
-            // Assegna un nuovo UUID se manca
             if (!result.id || result.id.length !== 36 || !result.id.includes('-')) {
               result.id = uuidv4();
             }
             
-            // Inserisci il risultato nel database
             const { error } = await supabase
               .from('calculation_results')
               .insert({
-                id: result.id,
                 user_id: userId,
                 date: result.date.toISOString(),
                 office_total: result.officeTotal,
@@ -201,14 +178,11 @@ export function useEnergyStorage() {
             if (error) console.error("Errore nel salvataggio del risultato:", error);
           }
           
-          // Aggiorna le soglie
-          // Prima elimina tutte le soglie esistenti
           await supabase
             .from('thresholds')
             .delete()
             .eq('user_id', userId);
             
-          // Poi inserisci le nuove soglie
           const thresholdEntries = Object.entries(data.thresholds);
           if (thresholdEntries.length > 0) {
             const thresholdsToInsert = thresholdEntries.map(([id, value]) => ({
@@ -226,14 +200,11 @@ export function useEnergyStorage() {
             if (error) console.error("Errore nel salvataggio delle soglie:", error);
           }
           
-          // Aggiorna i gruppi
-          // Prima elimina tutti i gruppi esistenti
           await supabase
             .from('consumption_groups')
             .delete()
             .eq('user_id', userId);
             
-          // Poi inserisci i nuovi gruppi
           if (data.groups && data.groups.length > 0) {
             const groupsToInsert = data.groups.map(group => ({
               id: group.id,

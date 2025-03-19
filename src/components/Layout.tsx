@@ -5,7 +5,7 @@ import { Home, History, LayoutDashboard } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import UserMenu from "./UserMenu";
 
 const navItems = [
@@ -27,7 +27,7 @@ const navItems = [
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const mobile = useMobile();
+  const mobile = useIsMobile();
   const location = useLocation();
 
   return (

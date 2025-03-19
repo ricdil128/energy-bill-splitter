@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LineChart, Shield, CloudCheck } from 'lucide-react';
+import { ArrowRight, LineChart, Shield, Cloud } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index: React.FC = () => {
@@ -88,7 +87,7 @@ const Index: React.FC = () => {
               </div>
               <div className="flex flex-col items-center space-y-4 text-center">
                 <div className="rounded-full bg-primary/10 p-4">
-                  <CloudCheck className="h-6 w-6 text-primary" />
+                  <Cloud className="h-6 w-6 text-primary" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">Sincronizzazione Cloud</h3>

@@ -9,7 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      calculation_results: {
+        Row: {
+          ac_bill: Json
+          ac_data: Json
+          ac_total: number
+          created_at: string | null
+          date: string | null
+          groups: Json | null
+          id: string
+          month: string | null
+          office_bill: Json
+          office_data: Json
+          office_total: number
+          user_id: string | null
+        }
+        Insert: {
+          ac_bill: Json
+          ac_data: Json
+          ac_total: number
+          created_at?: string | null
+          date?: string | null
+          groups?: Json | null
+          id?: string
+          month?: string | null
+          office_bill: Json
+          office_data: Json
+          office_total: number
+          user_id?: string | null
+        }
+        Update: {
+          ac_bill?: Json
+          ac_data?: Json
+          ac_total?: number
+          created_at?: string | null
+          date?: string | null
+          groups?: Json | null
+          id?: string
+          month?: string | null
+          office_bill?: Json
+          office_data?: Json
+          office_total?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      consumption_groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          name: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      thresholds: {
+        Row: {
+          active: boolean | null
+          consumption_id: string
+          consumption_type: string
+          created_at: string | null
+          id: string
+          threshold_value: number
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          consumption_id: string
+          consumption_type: string
+          created_at?: string | null
+          id?: string
+          threshold_value: number
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          consumption_id?: string
+          consumption_type?: string
+          created_at?: string | null
+          id?: string
+          threshold_value?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

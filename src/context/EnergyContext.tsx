@@ -4,6 +4,7 @@ import { EnergyContextType } from './energy-context-types';
 import { useEnergyStorage, StorageData } from '@/hooks/useEnergyStorage';
 import { useEnergyOperations } from '@/hooks/useEnergyOperations';
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
+import { ConsumptionType } from '@/types';
 
 // Create context with default values
 const EnergyContext = createContext<EnergyContextType | undefined>(undefined);
@@ -28,7 +29,7 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const thresholdAlerts = Object.entries(data.thresholds).map(([id, threshold]) => ({
         consumptionId: id,
         threshold,
-        type: id.includes('ac') ? 'ac' : 'office',
+        type: id.includes('ac') ? 'ac' as ConsumptionType : 'office' as ConsumptionType,
         active: true
       }));
       energyStorage.setThresholdAlerts(thresholdAlerts);

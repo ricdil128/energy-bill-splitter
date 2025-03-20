@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
@@ -17,7 +17,7 @@ function App() {
       <EnergyProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Layout />}>
+            <Route path="/" element={<Layout><Outlet /></Layout>}>
               <Route index element={<Index />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="auth" element={<Auth />} />

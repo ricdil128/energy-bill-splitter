@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { CalculationResult } from '@/types';
-import { exportToCSV, downloadCSV } from '@/utils/calculations';
+import { exportToCSV, downloadCSV } from '@/utils/export-utils';
 import { format } from 'date-fns';
 
 interface ExportButtonProps {

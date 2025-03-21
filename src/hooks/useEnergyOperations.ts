@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ConsumptionData, 
@@ -6,8 +7,24 @@ import {
   CalculationResult, 
   ConsumptionGroup 
 } from '@/types';
-import { StorageData } from '@/hooks/useEnergyStorage';
-import { v4 as uuidv4 } from 'uuid';
+import { StorageData } from '@/types/energy-storage';
+import { 
+  groupConsumptionData, 
+  getGroupItems, 
+  getGroupGeneralCounters, 
+  updateGroup, 
+  addGroup, 
+  deleteGroup 
+} from '@/utils/group-operations';
+import { 
+  updateConsumption as updateConsumptionUtil, 
+  resetConsumptionData as resetConsumptionDataUtil, 
+  calculateResults as calculateResultsUtil 
+} from '@/utils/consumption-operations';
+import { 
+  updateBillAmount as updateBillAmountUtil, 
+  formatThresholdsForStorage 
+} from '@/utils/bill-operations';
 
 // Main hook for energy operations
 export const useEnergyOperations = (
@@ -35,70 +52,13 @@ export const useEnergyOperations = (
   const groupedOfficeData = groupConsumptionData(officeData, groups);
   const groupedAcData = groupConsumptionData(acData, groups);
   
-  // Helper to group consumption data
-  function groupConsumptionData(data: ConsumptionData[], groups: ConsumptionGroup[]) {
-    const groupedData: Record<string, {
-      name: string;
-      propertyType?: string;
-      propertyNumber?: string;
-      numberOfUnits?: number;
-      items: ConsumptionData[];
-      generalCounters?: ConsumptionData[];
-      parentGroupId?: string;
-    }> = {};
-    
-    // Initialize with all groups
-    groups.forEach(group => {
-      groupedData[group.id] = {
-        name: group.name,
-        propertyType: group.propertyType,
-        propertyNumber: group.propertyNumber,
-        numberOfUnits: group.numberOfUnits,
-        parentGroupId: group.parentGroupId,
-        items: [],
-        generalCounters: []
-      };
-    });
-    
-    // Group the data
-    data.forEach(item => {
-      const groupId = item.groupId || '';
-      
-      if (groupedData[groupId]) {
-        if (item.isGeneral) {
-          groupedData[groupId].generalCounters?.push(item);
-        } else {
-          groupedData[groupId].items.push(item);
-        }
-      }
-    });
-    
-    return groupedData;
-  }
-  
-  // Helper method to get items for a specific group
-  const getGroupItems = (type: ConsumptionType, groupId: string): ConsumptionData[] => {
-    const data = type === 'office' ? officeData : acData;
-    return data.filter(item => item.groupId === groupId && !item.isGeneral);
-  };
-  
-  // Helper method to get general counters for a specific group
-  const getGroupGeneralCounters = (type: ConsumptionType, groupId: string): ConsumptionData[] => {
-    const data = type === 'office' ? officeData : acData;
-    return data.filter(item => item.groupId === groupId && item.isGeneral);
-  };
-  
   // Update consumption value
   const updateConsumption = (type: ConsumptionType, id: string, kwh: number) => {
     if (type === 'office') {
-      const updatedData = officeData.map(item => 
-        item.id === id ? { ...item, kwh } : item
-      );
+      const updatedData = updateConsumptionUtil(officeData, id, kwh);
       updateStorage({ ...storedData, officeData: updatedData });
     } else {
-      const updatedData = acData.map(item => 
-        item.id === id ? { ...item, kwh } : item
-      );
+      const updatedData = updateConsumptionUtil(acData, id, kwh);
       updateStorage({ ...storedData, acData: updatedData });
     }
   };
@@ -112,22 +72,24 @@ export const useEnergyOperations = (
     billNumber?: string
   ) => {
     if (type === 'office') {
-      const updatedBill = { 
-        ...officeBill, 
-        totalAmount: amount,
+      const updatedBill = updateBillAmountUtil(
+        type,
+        officeBill,
+        amount,
         groupId,
         providerName,
         billNumber
-      };
+      );
       updateStorage({ ...storedData, officeBill: updatedBill });
     } else {
-      const updatedBill = { 
-        ...acBill, 
-        totalAmount: amount,
+      const updatedBill = updateBillAmountUtil(
+        type,
+        acBill,
+        amount,
         groupId,
         providerName,
         billNumber
-      };
+      );
       updateStorage({ ...storedData, acBill: updatedBill });
     }
   };
@@ -137,12 +99,7 @@ export const useEnergyOperations = (
     const updatedThresholds = { ...thresholds, [id]: value };
     
     // Format for storage
-    const thresholdItems = Object.entries(updatedThresholds).map(([consumptionId, threshold]) => ({
-      consumptionId,
-      threshold,
-      type: consumptionId.includes('ac') ? 'ac' as ConsumptionType : 'office' as ConsumptionType,
-      active: true
-    }));
+    const thresholdItems = formatThresholdsForStorage(updatedThresholds);
     
     updateStorage({ 
       ...storedData, 
@@ -152,35 +109,7 @@ export const useEnergyOperations = (
   
   // Calculate results
   const calculateResults = () => {
-    // Get total consumption
-    const officeTotal = officeData.reduce((total, item) => total + item.kwh, 0);
-    const acTotal = acData.reduce((total, item) => total + item.kwh, 0);
-    
-    // Calculate percentages and costs
-    const calculatedOfficeData = officeData.map(item => ({
-      ...item,
-      percentage: (item.kwh / officeTotal) * 100,
-      cost: (item.kwh / officeTotal) * officeBill.totalAmount
-    }));
-    
-    const calculatedAcData = acData.map(item => ({
-      ...item,
-      percentage: (item.kwh / acTotal) * 100,
-      cost: (item.kwh / acTotal) * acBill.totalAmount
-    }));
-    
-    // Create result object
-    const result: CalculationResult = {
-      id: uuidv4(),
-      date: new Date(),
-      officeData: calculatedOfficeData,
-      acData: calculatedAcData,
-      officeBill,
-      acBill,
-      officeTotal,
-      acTotal,
-      groups: [...groups]
-    };
+    const result = calculateResultsUtil(officeData, acData, officeBill, acBill, groups);
     
     // Add to results and save
     const updatedResults = [result, ...results];
@@ -198,20 +127,10 @@ export const useEnergyOperations = (
   // Reset consumption data
   const resetConsumptionData = (type: ConsumptionType, groupId?: string) => {
     if (type === 'office') {
-      const updatedData = groupId 
-        ? officeData.map(item => (
-            item.groupId === groupId ? { ...item, kwh: 0 } : item
-          ))
-        : officeData.map(item => ({ ...item, kwh: 0 }));
-      
+      const updatedData = resetConsumptionDataUtil(officeData, groupId);
       updateStorage({ ...storedData, officeData: updatedData });
     } else {
-      const updatedData = groupId 
-        ? acData.map(item => (
-            item.groupId === groupId ? { ...item, kwh: 0 } : item
-          ))
-        : acData.map(item => ({ ...item, kwh: 0 }));
-      
+      const updatedData = resetConsumptionDataUtil(acData, groupId);
       updateStorage({ ...storedData, acData: updatedData });
     }
   };
@@ -234,16 +153,14 @@ export const useEnergyOperations = (
     }
   };
 
-  // Update an existing group
-  const updateGroup = (groupId: string, data: Partial<ConsumptionGroup>) => {
-    const updatedGroups = groups.map(group => 
-      group.id === groupId ? { ...group, ...data } : group
-    );
+  // Update group using utility function
+  const handleUpdateGroup = (groupId: string, data: Partial<ConsumptionGroup>) => {
+    const updatedGroups = updateGroup(groups, groupId, data);
     updateStorage({ ...storedData, groups: updatedGroups });
   };
   
-  // Add a new group
-  const addGroup = (
+  // Add group using utility function
+  const handleAddGroup = (
     name: string, 
     type: ConsumptionType, 
     propertyType?: string, 
@@ -251,48 +168,35 @@ export const useEnergyOperations = (
     numberOfUnits?: number,
     parentGroupId?: string
   ): string => {
-    const id = uuidv4();
-    const newGroup: ConsumptionGroup = { 
-      id, 
+    const { id, updatedGroups } = addGroup(
+      groups, 
       name, 
-      type,
-      propertyType,
-      propertyNumber,
-      numberOfUnits,
+      type, 
+      propertyType, 
+      propertyNumber, 
+      numberOfUnits, 
       parentGroupId
-    };
+    );
     
-    const updatedGroups = [...groups, newGroup];
     updateStorage({ ...storedData, groups: updatedGroups });
     
     return id;
   };
   
-  // Delete a group and its associated data
-  const deleteGroup = (groupId: string): boolean => {
-    // Check if group exists
-    if (!groups.find(g => g.id === groupId)) {
-      return false;
+  // Delete group using utility function
+  const handleDeleteGroup = (groupId: string): boolean => {
+    const result = deleteGroup(groups, officeData, acData, groupId);
+    
+    if (result.success) {
+      updateStorage({ 
+        ...storedData, 
+        groups: result.updatedGroups!,
+        officeData: result.updatedOfficeData!,
+        acData: result.updatedAcData!
+      });
     }
     
-    // Filter out groups
-    const updatedGroups = groups.filter(g => g.id !== groupId);
-    
-    // Filter out office data for this group
-    const updatedOfficeData = officeData.filter(item => item.groupId !== groupId);
-    
-    // Filter out AC data for this group
-    const updatedAcData = acData.filter(item => item.groupId !== groupId);
-    
-    // Update storage
-    updateStorage({ 
-      ...storedData, 
-      groups: updatedGroups,
-      officeData: updatedOfficeData,
-      acData: updatedAcData
-    });
-    
-    return true;
+    return result.success;
   };
 
   return {
@@ -313,10 +217,12 @@ export const useEnergyOperations = (
     resetConsumptionData,
     loadResult,
     deleteResult,
-    getGroupItems,
-    getGroupGeneralCounters,
-    updateGroup,
-    addGroup,
-    deleteGroup
+    getGroupItems: (type: ConsumptionType, groupId: string) => 
+      getGroupItems(type === 'office' ? officeData : acData, groupId),
+    getGroupGeneralCounters: (type: ConsumptionType, groupId: string) => 
+      getGroupGeneralCounters(type === 'office' ? officeData : acData, groupId),
+    updateGroup: handleUpdateGroup,
+    addGroup: handleAddGroup,
+    deleteGroup: handleDeleteGroup
   };
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEnergy } from '@/context/EnergyContext';
 import { ConsumptionType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -7,20 +7,43 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save } from 'lucide-react';
+import { Save, Check } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+
+interface FormValues {
+  officeLabel: string;
+  acLabel: string;
+}
 
 const ConsumptionTypeSettings: React.FC = () => {
   const { consumptionTypeLabels, updateConsumptionTypeLabel } = useEnergy();
-  const [officeLabel, setOfficeLabel] = React.useState(consumptionTypeLabels.office);
-  const [acLabel, setAcLabel] = React.useState(consumptionTypeLabels.ac);
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (officeLabel.trim() && acLabel.trim()) {
-      updateConsumptionTypeLabel('office', officeLabel.trim());
-      updateConsumptionTypeLabel('ac', acLabel.trim());
-      toast.success('Etichette dei tipi di consumo aggiornate');
+  const form = useForm<FormValues>({
+    defaultValues: {
+      officeLabel: consumptionTypeLabels.office,
+      acLabel: consumptionTypeLabels.ac
+    }
+  });
+  
+  // Aggiorna il form quando cambiano i valori esterni
+  useEffect(() => {
+    form.reset({
+      officeLabel: consumptionTypeLabels.office,
+      acLabel: consumptionTypeLabels.ac
+    });
+  }, [consumptionTypeLabels, form]);
+  
+  const onSubmit = (values: FormValues) => {
+    if (values.officeLabel.trim() && values.acLabel.trim()) {
+      updateConsumptionTypeLabel('office', values.officeLabel.trim());
+      updateConsumptionTypeLabel('ac', values.acLabel.trim());
+      
+      // Mostra toast di conferma
+      toast.success('Impostazioni salvate con successo', {
+        description: 'Le etichette dei tipi di consumo sono state aggiornate',
+        icon: <Check className="h-4 w-4 text-green-500" />
+      });
     } else {
       toast.error('Entrambe le etichette devono essere compilate');
     }
@@ -35,31 +58,47 @@ const ConsumptionTypeSettings: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="officeLabel">Etichetta per "Uffici"</Label>
-            <Input
-              id="officeLabel"
-              value={officeLabel}
-              onChange={(e) => setOfficeLabel(e.target.value)}
-              placeholder="Es. Uffici, Appartamenti, Unità..."
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="officeLabel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Etichetta per "Uffici"</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Es. Uffici, Appartamenti, Unità..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="acLabel">Etichetta per "Aria Condizionata"</Label>
-            <Input
-              id="acLabel"
-              value={acLabel}
-              onChange={(e) => setAcLabel(e.target.value)}
-              placeholder="Es. Aria Condizionata, Riscaldamento, Servizi Comuni..."
+            
+            <FormField
+              control={form.control}
+              name="acLabel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Etichetta per "Aria Condizionata"</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Es. Aria Condizionata, Riscaldamento, Servizi Comuni..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          
-          <Button type="submit" className="w-full">
-            <Save className="mr-2 h-4 w-4" /> Salva Modifiche
-          </Button>
-        </form>
+            
+            <Button type="submit" className="w-full">
+              <Save className="mr-2 h-4 w-4" /> Salva Modifiche
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

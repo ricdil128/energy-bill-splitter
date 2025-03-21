@@ -175,6 +175,10 @@ export function useEnergyStorage() {
                 id: group.id,
                 name: group.name,
                 type: group.type,
+                property_type: group.propertyType,
+                property_number: group.propertyNumber,
+                number_of_units: group.numberOfUnits,
+                parent_group_id: group.parentGroupId,
                 user_id: user.id
               })),
               { onConflict: 'id' }

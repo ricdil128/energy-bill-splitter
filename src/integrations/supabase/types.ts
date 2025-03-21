@@ -98,6 +98,10 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          number_of_units: number | null
+          parent_group_id: string | null
+          property_number: string | null
+          property_type: string | null
           type: string
           user_id: string | null
         }
@@ -105,6 +109,10 @@ export type Database = {
           created_at?: string | null
           id: string
           name: string
+          number_of_units?: number | null
+          parent_group_id?: string | null
+          property_number?: string | null
+          property_type?: string | null
           type: string
           user_id?: string | null
         }
@@ -112,6 +120,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          number_of_units?: number | null
+          parent_group_id?: string | null
+          property_number?: string | null
+          property_type?: string | null
           type?: string
           user_id?: string | null
         }

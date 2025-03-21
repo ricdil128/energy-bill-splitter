@@ -1,3 +1,4 @@
+
 export interface ConsumptionData {
   id: string;
   name: string;
@@ -18,6 +19,8 @@ export interface ConsumptionGroup {
   type: ConsumptionType;
   propertyType?: string; // Type of property (building, offices, etc.)
   propertyNumber?: string; // Property identifier number
+  numberOfUnits?: number; // Number of units/apartments in a building
+  parentGroupId?: string; // Parent group ID for hierarchical structures
 }
 
 export interface BillData {
@@ -68,8 +71,10 @@ export interface GroupedConsumptionData {
     name: string;
     propertyType?: string;
     propertyNumber?: string;
+    numberOfUnits?: number;
     items: ConsumptionData[];
     generalCounters?: ConsumptionData[];
+    parentGroupId?: string;
   };
 }
 
@@ -102,4 +107,10 @@ export interface CompanyInfo {
     phone?: string;
   };
   logoUrl?: string; // URL to the logo image
+}
+
+// Interface for consumption type labels
+export interface ConsumptionTypeLabels {
+  office: string;
+  ac: string;
 }

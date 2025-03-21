@@ -10,11 +10,12 @@ import MonthlyChart from '@/components/MonthlyChart';
 import OfficeRegistryManager from '@/components/OfficeRegistryManager';
 import CompanyInfoManager from '@/components/CompanyInfoManager';
 import PDFReportGenerator from '@/components/PDFReportGenerator';
+import ConsumptionTypeSettings from '@/components/settings/ConsumptionTypeSettings';
 import { useEnergy } from '@/context/EnergyContext';
-import { Calculator, BarChart3, Users, FileText, Building } from 'lucide-react';
+import { Calculator, BarChart3, Users, FileText, Building, Settings } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { calculateResults, companyInfo } = useEnergy();
+  const { calculateResults, companyInfo, getConsumptionTypeLabel } = useEnergy();
   
   return (
     <div className="container px-4 py-8 mx-auto max-w-7xl">
@@ -34,17 +35,18 @@ const Dashboard: React.FC = () => {
           <TabsTrigger value="company">Azienda/Condominio</TabsTrigger>
           <TabsTrigger value="reports">Report PDF</TabsTrigger>
           <TabsTrigger value="charts">Grafici e Analisi</TabsTrigger>
+          <TabsTrigger value="settings">Impostazioni</TabsTrigger>
         </TabsList>
         
         <TabsContent value="input">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <ConsumptionInput type="office" title="Consumo Uffici" />
-            <ConsumptionInput type="ac" title="Consumo Aria Condizionata" />
+            <ConsumptionInput type="office" />
+            <ConsumptionInput type="ac" />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <BillInput type="office" title="Bolletta Ufficio" />
-            <BillInput type="ac" title="Bolletta Aria Condizionata" />
+            <BillInput type="office" title={`Bolletta ${getConsumptionTypeLabel('office')}`} />
+            <BillInput type="ac" title={`Bolletta ${getConsumptionTypeLabel('ac')}`} />
           </div>
           
           <div className="mb-6">
@@ -87,6 +89,14 @@ const Dashboard: React.FC = () => {
         <TabsContent value="charts">
           <div className="mb-8">
             <MonthlyChart />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConsumptionTypeSettings />
+            </div>
           </div>
         </TabsContent>
       </Tabs>

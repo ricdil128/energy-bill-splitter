@@ -11,13 +11,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
+import { useEnergy } from '@/context/EnergyContext';
 
 interface ResultsTableProps {
   data: ConsumptionData[];
+  type?: ConsumptionType;
 }
 
-const ResultsTable: React.FC<ResultsTableProps> = ({ data }) => {
+const ResultsTable: React.FC<ResultsTableProps> = ({ data, type }) => {
   const { getCompanyName } = useOfficeRegistry();
+  const { getConsumptionTypeLabel } = useEnergy();
   
   return (
     <ScrollArea className="h-[200px] pr-4">

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ConsumptionData, ConsumptionType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -22,7 +23,7 @@ import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
 
 interface ConsumptionInputProps {
   type: ConsumptionType;
-  title: string;
+  title?: string;
 }
 
 const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
@@ -33,7 +34,8 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     updateConsumption,
     resetConsumptionData,
     groupedOfficeData,
-    groupedAcData
+    groupedAcData,
+    getConsumptionTypeLabel
   } = useEnergy();
   
   const { getCompanyName } = useOfficeRegistry();
@@ -68,7 +70,7 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     });
     
     if (updated > 0) {
-      toast.success(`Aggiornati ${updated} valori di consumo ${type === 'office' ? 'uffici' : 'aria condizionata'}`);
+      toast.success(`Aggiornati ${updated} valori di consumo ${getConsumptionTypeLabel(type)}`);
     }
   };
 
@@ -110,12 +112,15 @@ const ConsumptionInput: React.FC<ConsumptionInputProps> = ({ type, title }) => {
     return groupedData[activeGroupTab]?.generalCounters || [];
   };
   
+  // Use the context-provided label or fallback to the provided title
+  const displayTitle = title || getConsumptionTypeLabel(type);
+  
   return (
     <Card className="shadow-sm transition-all duration-300 h-full">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center gap-2 text-xl font-medium">
-            {icon} {title}
+            {icon} {displayTitle}
           </CardTitle>
           <Badge variant="outline" className="px-2 py-1 text-sm">
             <Zap className="h-3.5 w-3.5 mr-1 inline-block" />

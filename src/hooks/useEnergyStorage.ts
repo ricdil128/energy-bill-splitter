@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
-import { CalculationResult, ConsumptionData, BillData, ConsumptionGroup, ThresholdAlert, MonthlyConsumption, OfficeRegistry } from '@/types';
+import { CalculationResult, ConsumptionData, BillData, ConsumptionGroup, ThresholdAlert, MonthlyConsumption, OfficeRegistry, ConsumptionTypeLabels } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { DEFAULT_CONSUMPTION_TYPE_LABELS } from '@/context/energy-context-types';
 
 const STORAGE_KEY_OFFICE = 'office-consumption-data';
 const STORAGE_KEY_AC = 'ac-consumption-data';
@@ -12,6 +12,7 @@ const STORAGE_KEY_RESULTS = 'calculation-results';
 const STORAGE_KEY_GROUPS = 'consumption-groups';
 const STORAGE_KEY_THRESHOLDS = 'threshold-alerts';
 const STORAGE_KEY_MONTHLY_CONSUMPTION = 'monthly-consumption';
+const STORAGE_KEY_CONSUMPTION_TYPE_LABELS = 'consumption-type-labels';
 
 // Define StorageData type
 export interface StorageData {
@@ -21,8 +22,9 @@ export interface StorageData {
   acBill?: BillData | null;
   results?: CalculationResult[];
   groups?: ConsumptionGroup[];
-  thresholds?: ThresholdAlert[]; // Changed from Record<string, number> to ThresholdAlert[]
+  thresholds?: ThresholdAlert[]; 
   monthlyConsumptionData?: MonthlyConsumption[];
+  consumptionTypeLabels?: ConsumptionTypeLabels;
 }
 
 export function useEnergyStorage() {
@@ -34,6 +36,7 @@ export function useEnergyStorage() {
   const [consumptionGroups, setConsumptionGroups] = useState<ConsumptionGroup[]>([]);
   const [thresholdAlerts, setThresholdAlerts] = useState<ThresholdAlert[]>([]);
   const [monthlyConsumptionData, setMonthlyConsumptionData] = useState<MonthlyConsumption[]>([]);
+  const [consumptionTypeLabels, setConsumptionTypeLabels] = useState<ConsumptionTypeLabels>(DEFAULT_CONSUMPTION_TYPE_LABELS);
   const { user } = useAuth();
   
   useEffect(() => {
@@ -46,6 +49,7 @@ export function useEnergyStorage() {
       let storedGroups: ConsumptionGroup[] = [];
       let storedThresholds: ThresholdAlert[] = [];
       let storedMonthlyConsumption: MonthlyConsumption[] = [];
+      let storedConsumptionTypeLabels: ConsumptionTypeLabels = DEFAULT_CONSUMPTION_TYPE_LABELS;
       
       if (user) {
         // Since we only have calculation_results, consumption_groups, office_registry and thresholds tables in Supabase,
@@ -62,6 +66,10 @@ export function useEnergyStorage() {
             id: group.id,
             name: group.name,
             type: group.type as any, // Cast to ConsumptionType
+            propertyType: group.property_type,
+            propertyNumber: group.property_number,
+            numberOfUnits: group.number_of_units,
+            parentGroupId: group.parent_group_id
           }));
         }
         
@@ -108,6 +116,7 @@ export function useEnergyStorage() {
         storedOfficeBill = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE_BILL) || 'null');
         storedAcBill = JSON.parse(localStorage.getItem(STORAGE_KEY_AC_BILL) || 'null');
         storedMonthlyConsumption = JSON.parse(localStorage.getItem(STORAGE_KEY_MONTHLY_CONSUMPTION) || '[]');
+        storedConsumptionTypeLabels = JSON.parse(localStorage.getItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS) || JSON.stringify(DEFAULT_CONSUMPTION_TYPE_LABELS));
       } else {
         // Load data from localStorage
         storedOfficeData = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE) || '[]');
@@ -118,6 +127,7 @@ export function useEnergyStorage() {
         storedGroups = JSON.parse(localStorage.getItem(STORAGE_KEY_GROUPS) || '[]');
         storedThresholds = JSON.parse(localStorage.getItem(STORAGE_KEY_THRESHOLDS) || '[]');
         storedMonthlyConsumption = JSON.parse(localStorage.getItem(STORAGE_KEY_MONTHLY_CONSUMPTION) || '[]');
+        storedConsumptionTypeLabels = JSON.parse(localStorage.getItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS) || JSON.stringify(DEFAULT_CONSUMPTION_TYPE_LABELS));
       }
       
       setOfficeData(storedOfficeData);
@@ -128,6 +138,7 @@ export function useEnergyStorage() {
       setConsumptionGroups(storedGroups);
       setThresholdAlerts(storedThresholds);
       setMonthlyConsumptionData(storedMonthlyConsumption);
+      setConsumptionTypeLabels(storedConsumptionTypeLabels);
     };
     
     loadData();
@@ -143,7 +154,8 @@ export function useEnergyStorage() {
     localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(consumptionGroups));
     localStorage.setItem(STORAGE_KEY_THRESHOLDS, JSON.stringify(thresholdAlerts));
     localStorage.setItem(STORAGE_KEY_MONTHLY_CONSUMPTION, JSON.stringify(monthlyConsumptionData));
-  }, [officeData, acData, officeBill, acBill, calculationResults, consumptionGroups, thresholdAlerts, monthlyConsumptionData]);
+    localStorage.setItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS, JSON.stringify(consumptionTypeLabels));
+  }, [officeData, acData, officeBill, acBill, calculationResults, consumptionGroups, thresholdAlerts, monthlyConsumptionData, consumptionTypeLabels]);
   
   // Save data to database
   const saveData = async <T>(key: string, data: T): Promise<boolean> => {
@@ -249,7 +261,8 @@ export function useEnergyStorage() {
     calculationResults,
     consumptionGroups,
     thresholdAlerts,
-    monthlyConsumptionData
+    monthlyConsumptionData,
+    consumptionTypeLabels
   });
   
   return {
@@ -262,6 +275,7 @@ export function useEnergyStorage() {
     setConsumptionGroups,
     setThresholdAlerts,
     setMonthlyConsumptionData,
+    setConsumptionTypeLabels,
     saveData,
     saveCalculationResult
   };

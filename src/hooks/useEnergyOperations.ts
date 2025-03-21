@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ConsumptionData, 
@@ -42,8 +41,10 @@ export const useEnergyOperations = (
       name: string;
       propertyType?: string;
       propertyNumber?: string;
+      numberOfUnits?: number;
       items: ConsumptionData[];
       generalCounters?: ConsumptionData[];
+      parentGroupId?: string;
     }> = {};
     
     // Initialize with all groups
@@ -52,6 +53,8 @@ export const useEnergyOperations = (
         name: group.name,
         propertyType: group.propertyType,
         propertyNumber: group.propertyNumber,
+        numberOfUnits: group.numberOfUnits,
+        parentGroupId: group.parentGroupId,
         items: [],
         generalCounters: []
       };
@@ -240,14 +243,23 @@ export const useEnergyOperations = (
   };
   
   // Add a new group
-  const addGroup = (name: string, type: ConsumptionType, propertyType?: string, propertyNumber?: string): string => {
+  const addGroup = (
+    name: string, 
+    type: ConsumptionType, 
+    propertyType?: string, 
+    propertyNumber?: string,
+    numberOfUnits?: number,
+    parentGroupId?: string
+  ): string => {
     const id = uuidv4();
     const newGroup: ConsumptionGroup = { 
       id, 
       name, 
       type,
       propertyType,
-      propertyNumber
+      propertyNumber,
+      numberOfUnits,
+      parentGroupId
     };
     
     const updatedGroups = [...groups, newGroup];

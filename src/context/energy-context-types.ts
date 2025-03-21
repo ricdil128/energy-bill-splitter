@@ -6,7 +6,8 @@ import {
   ConsumptionType,
   ConsumptionGroup,
   GroupedConsumptionData,
-  CompanyInfo
+  CompanyInfo,
+  ConsumptionTypeLabels
 } from '@/types';
 
 // Define the context shape
@@ -22,6 +23,7 @@ export interface EnergyContextType {
   groupedOfficeData: GroupedConsumptionData;
   groupedAcData: GroupedConsumptionData;
   companyInfo: CompanyInfo | null;
+  consumptionTypeLabels: ConsumptionTypeLabels;
   updateConsumption: (type: ConsumptionType, id: string, kwh: number) => void;
   updateBillAmount: (type: ConsumptionType, amount: number, groupId?: string, providerName?: string, billNumber?: string) => void;
   calculateResults: () => void;
@@ -32,9 +34,11 @@ export interface EnergyContextType {
   getGroupItems: (type: ConsumptionType, groupId: string) => ConsumptionData[];
   getGroupGeneralCounters: (type: ConsumptionType, groupId: string) => ConsumptionData[];
   updateGroup: (groupId: string, data: Partial<ConsumptionGroup>) => void;
-  addGroup: (name: string, type: ConsumptionType, propertyType?: string, propertyNumber?: string) => string;
+  addGroup: (name: string, type: ConsumptionType, propertyType?: string, propertyNumber?: string, numberOfUnits?: number, parentGroupId?: string) => string;
   deleteGroup: (groupId: string) => boolean;
   saveCompanyInfo: (info: CompanyInfo) => Promise<boolean>;
+  updateConsumptionTypeLabel: (type: ConsumptionType, label: string) => void;
+  getConsumptionTypeLabel: (type: ConsumptionType) => string;
 }
 
 // The key we'll use to store results in localStorage
@@ -61,3 +65,9 @@ export const DEFAULT_GROUPS: ConsumptionGroup[] = [
     propertyNumber: '2'
   }
 ];
+
+// Default consumption type labels
+export const DEFAULT_CONSUMPTION_TYPE_LABELS: ConsumptionTypeLabels = {
+  office: 'Uffici',
+  ac: 'Aria Condizionata'
+};

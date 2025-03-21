@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { EnergyContextType, DEFAULT_CONSUMPTION_TYPE_LABELS } from './energy-context-types';
-import { useEnergyStorage, StorageData } from '@/hooks/useEnergyStorage';
+import { useEnergyStorage } from '@/hooks/useEnergyStorage';
 import { useEnergyOperations } from '@/hooks/useEnergyOperations';
 import { useOfficeRegistry } from '@/hooks/useOfficeRegistry';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
@@ -27,7 +27,7 @@ export const EnergyProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   );
   
   // Get energy operations with storage data
-  const energyOperations = useEnergyOperations(storedData, (data: StorageData) => {
+  const energyOperations = useEnergyOperations(storedData, (data) => {
     if (data.officeData) energyStorage.setOfficeData(data.officeData);
     if (data.acData) energyStorage.setAcData(data.acData);
     if (data.officeBill) energyStorage.setOfficeBill(data.officeBill);

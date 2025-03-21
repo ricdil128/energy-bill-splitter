@@ -1,33 +1,28 @@
+
 import { useState, useEffect } from 'react';
-import { CalculationResult, ConsumptionData, BillData, ConsumptionGroup, ThresholdAlert, MonthlyConsumption, OfficeRegistry, ConsumptionTypeLabels } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { CalculationResult, ConsumptionData, BillData, ConsumptionGroup, ThresholdAlert, MonthlyConsumption, ConsumptionTypeLabels } from '@/types';
 import { useAuth } from './useAuth';
 import { DEFAULT_CONSUMPTION_TYPE_LABELS } from '@/context/energy-context-types';
+import { StorageData, EnergyStorageHook } from '@/types/energy-storage';
+import { loadFromLocalStorage, saveToLocalStorage } from '@/utils/storage-utils';
+import { 
+  saveGroupsToSupabase,
+  saveThresholdsToSupabase,
+  saveCalculationResultToSupabase,
+  loadGroupsFromSupabase,
+  loadResultsFromSupabase,
+  loadThresholdsFromSupabase
+} from '@/utils/db-utils';
+import { 
+  STORAGE_KEY_GROUPS,
+  STORAGE_KEY_RESULTS,
+  STORAGE_KEY_THRESHOLDS
+} from '@/constants/storage-keys';
 
-const STORAGE_KEY_OFFICE = 'office-consumption-data';
-const STORAGE_KEY_AC = 'ac-consumption-data';
-const STORAGE_KEY_OFFICE_BILL = 'office-bill-data';
-const STORAGE_KEY_AC_BILL = 'ac-bill-data';
-const STORAGE_KEY_RESULTS = 'calculation-results';
-const STORAGE_KEY_GROUPS = 'consumption-groups';
-const STORAGE_KEY_THRESHOLDS = 'threshold-alerts';
-const STORAGE_KEY_MONTHLY_CONSUMPTION = 'monthly-consumption';
-const STORAGE_KEY_CONSUMPTION_TYPE_LABELS = 'consumption-type-labels';
+// Export StorageData type for use in other components
+export type { StorageData } from '@/types/energy-storage';
 
-// Define StorageData type
-export interface StorageData {
-  officeData?: ConsumptionData[];
-  acData?: ConsumptionData[];
-  officeBill?: BillData | null;
-  acBill?: BillData | null;
-  results?: CalculationResult[];
-  groups?: ConsumptionGroup[];
-  thresholds?: ThresholdAlert[]; 
-  monthlyConsumptionData?: MonthlyConsumption[];
-  consumptionTypeLabels?: ConsumptionTypeLabels;
-}
-
-export function useEnergyStorage() {
+export function useEnergyStorage(): EnergyStorageHook {
   const [officeData, setOfficeData] = useState<ConsumptionData[]>([]);
   const [acData, setAcData] = useState<ConsumptionData[]>([]);
   const [officeBill, setOfficeBill] = useState<BillData | null>(null);
@@ -37,127 +32,73 @@ export function useEnergyStorage() {
   const [thresholdAlerts, setThresholdAlerts] = useState<ThresholdAlert[]>([]);
   const [monthlyConsumptionData, setMonthlyConsumptionData] = useState<MonthlyConsumption[]>([]);
   const [consumptionTypeLabels, setConsumptionTypeLabels] = useState<ConsumptionTypeLabels>(DEFAULT_CONSUMPTION_TYPE_LABELS);
+  
   const { user } = useAuth();
   
+  // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
-      let storedOfficeData: ConsumptionData[] = [];
-      let storedAcData: ConsumptionData[] = [];
-      let storedOfficeBill: BillData | null = null;
-      let storedAcBill: BillData | null = null;
-      let storedResults: CalculationResult[] = [];
-      let storedGroups: ConsumptionGroup[] = [];
-      let storedThresholds: ThresholdAlert[] = [];
-      let storedMonthlyConsumption: MonthlyConsumption[] = [];
-      let storedConsumptionTypeLabels: ConsumptionTypeLabels = DEFAULT_CONSUMPTION_TYPE_LABELS;
+      // Initialize with default values
+      let storedData = loadFromLocalStorage();
       
       if (user) {
-        // Since we only have calculation_results, consumption_groups, office_registry and thresholds tables in Supabase,
-        // we'll need to use localStorage for the other data for now
+        // Load data from Supabase if user is logged in
+        const dbGroups = await loadGroupsFromSupabase(user.id);
+        const dbResults = await loadResultsFromSupabase(user.id);
+        const dbThresholds = await loadThresholdsFromSupabase(user.id);
         
-        // Load consumption groups from Supabase
-        const { data: dbGroups } = await supabase
-          .from('consumption_groups')
-          .select('*')
-          .eq('user_id', user.id);
-          
-        if (dbGroups) {
-          storedGroups = dbGroups.map(group => ({
-            id: group.id,
-            name: group.name,
-            type: group.type as any, // Cast to ConsumptionType
-            propertyType: group.property_type,
-            propertyNumber: group.property_number,
-            numberOfUnits: group.number_of_units,
-            parentGroupId: group.parent_group_id
-          }));
-        }
-        
-        // Load calculation results from Supabase
-        const { data: dbResults } = await supabase
-          .from('calculation_results')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false });
-          
-        if (dbResults) {
-          storedResults = dbResults.map(result => ({
-            id: result.id,
-            date: new Date(result.date || new Date()),
-            officeTotal: result.office_total,
-            acTotal: result.ac_total,
-            officeData: result.office_data as any,
-            acData: result.ac_data as any,
-            officeBill: result.office_bill as any,
-            acBill: result.ac_bill as any,
-            month: result.month || '',
-            groups: result.groups as any || []
-          }));
-        }
-        
-        // Load thresholds from Supabase
-        const { data: dbThresholds } = await supabase
-          .from('thresholds')
-          .select('*')
-          .eq('user_id', user.id);
-          
-        if (dbThresholds) {
-          storedThresholds = dbThresholds.map(threshold => ({
-            type: threshold.consumption_type as any,
-            consumptionId: threshold.consumption_id,
-            threshold: threshold.threshold_value,
-            active: threshold.active || true
-          }));
-        }
-        
-        // Load from localStorage for items not yet migrated to Supabase
-        storedOfficeData = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE) || '[]');
-        storedAcData = JSON.parse(localStorage.getItem(STORAGE_KEY_AC) || '[]');
-        storedOfficeBill = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE_BILL) || 'null');
-        storedAcBill = JSON.parse(localStorage.getItem(STORAGE_KEY_AC_BILL) || 'null');
-        storedMonthlyConsumption = JSON.parse(localStorage.getItem(STORAGE_KEY_MONTHLY_CONSUMPTION) || '[]');
-        storedConsumptionTypeLabels = JSON.parse(localStorage.getItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS) || JSON.stringify(DEFAULT_CONSUMPTION_TYPE_LABELS));
-      } else {
-        // Load data from localStorage
-        storedOfficeData = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE) || '[]');
-        storedAcData = JSON.parse(localStorage.getItem(STORAGE_KEY_AC) || '[]');
-        storedOfficeBill = JSON.parse(localStorage.getItem(STORAGE_KEY_OFFICE_BILL) || 'null');
-        storedAcBill = JSON.parse(localStorage.getItem(STORAGE_KEY_AC_BILL) || 'null');
-        storedResults = JSON.parse(localStorage.getItem(STORAGE_KEY_RESULTS) || '[]');
-        storedGroups = JSON.parse(localStorage.getItem(STORAGE_KEY_GROUPS) || '[]');
-        storedThresholds = JSON.parse(localStorage.getItem(STORAGE_KEY_THRESHOLDS) || '[]');
-        storedMonthlyConsumption = JSON.parse(localStorage.getItem(STORAGE_KEY_MONTHLY_CONSUMPTION) || '[]');
-        storedConsumptionTypeLabels = JSON.parse(localStorage.getItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS) || JSON.stringify(DEFAULT_CONSUMPTION_TYPE_LABELS));
+        // Merge with localStorage data, preferring Supabase data
+        storedData = {
+          ...storedData,
+          groups: dbGroups.length > 0 ? dbGroups : storedData.groups,
+          results: dbResults.length > 0 ? dbResults : storedData.results,
+          thresholds: dbThresholds.length > 0 ? dbThresholds : storedData.thresholds
+        };
       }
       
-      setOfficeData(storedOfficeData);
-      setAcData(storedAcData);
-      setOfficeBill(storedOfficeBill);
-      setAcBill(storedAcBill);
-      setCalculationResults(storedResults);
-      setConsumptionGroups(storedGroups);
-      setThresholdAlerts(storedThresholds);
-      setMonthlyConsumptionData(storedMonthlyConsumption);
-      setConsumptionTypeLabels(storedConsumptionTypeLabels);
+      // Update state with loaded data
+      setOfficeData(storedData.officeData || []);
+      setAcData(storedData.acData || []);
+      setOfficeBill(storedData.officeBill || null);
+      setAcBill(storedData.acBill || null);
+      setCalculationResults(storedData.results || []);
+      setConsumptionGroups(storedData.groups || []);
+      setThresholdAlerts(storedData.thresholds || []);
+      setMonthlyConsumptionData(storedData.monthlyConsumptionData || []);
+      setConsumptionTypeLabels(storedData.consumptionTypeLabels || DEFAULT_CONSUMPTION_TYPE_LABELS);
     };
     
     loadData();
   }, [user]);
   
-  // Save data to local storage
+  // Save data to localStorage whenever state changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_OFFICE, JSON.stringify(officeData));
-    localStorage.setItem(STORAGE_KEY_AC, JSON.stringify(acData));
-    localStorage.setItem(STORAGE_KEY_OFFICE_BILL, JSON.stringify(officeBill));
-    localStorage.setItem(STORAGE_KEY_AC_BILL, JSON.stringify(acBill));
-    localStorage.setItem(STORAGE_KEY_RESULTS, JSON.stringify(calculationResults));
-    localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(consumptionGroups));
-    localStorage.setItem(STORAGE_KEY_THRESHOLDS, JSON.stringify(thresholdAlerts));
-    localStorage.setItem(STORAGE_KEY_MONTHLY_CONSUMPTION, JSON.stringify(monthlyConsumptionData));
-    localStorage.setItem(STORAGE_KEY_CONSUMPTION_TYPE_LABELS, JSON.stringify(consumptionTypeLabels));
-  }, [officeData, acData, officeBill, acBill, calculationResults, consumptionGroups, thresholdAlerts, monthlyConsumptionData, consumptionTypeLabels]);
+    const dataToSave: StorageData = {
+      officeData,
+      acData,
+      officeBill,
+      acBill,
+      results: calculationResults,
+      groups: consumptionGroups,
+      thresholds: thresholdAlerts,
+      monthlyConsumptionData,
+      consumptionTypeLabels
+    };
+    
+    saveToLocalStorage(dataToSave);
+  }, [
+    officeData, 
+    acData, 
+    officeBill, 
+    acBill, 
+    calculationResults, 
+    consumptionGroups, 
+    thresholdAlerts, 
+    monthlyConsumptionData,
+    consumptionTypeLabels
+  ]);
   
-  // Save data to database
+  // Save data to database when authenticated
   const saveData = async <T>(key: string, data: T): Promise<boolean> => {
     if (!user) {
       console.warn('User not logged in, data not saved to database.');
@@ -167,88 +108,33 @@ export function useEnergyStorage() {
     try {
       switch (key) {
         case STORAGE_KEY_GROUPS:
-          // Save consumption groups to Supabase
-          const { error: groupsError } = await supabase
-            .from('consumption_groups')
-            .upsert(
-              (data as ConsumptionGroup[]).map(group => ({
-                id: group.id,
-                name: group.name,
-                type: group.type,
-                property_type: group.propertyType,
-                property_number: group.propertyNumber,
-                number_of_units: group.numberOfUnits,
-                parent_group_id: group.parentGroupId,
-                user_id: user.id
-              })),
-              { onConflict: 'id' }
-            );
-          if (groupsError) throw groupsError;
-          break;
-
-        case STORAGE_KEY_RESULTS:
-          // Save calculation results to Supabase
-          // We'll handle this in the saveCalculationResult function
-          break;
-
+          return await saveGroupsToSupabase(data as ConsumptionGroup[], user.id);
+          
         case STORAGE_KEY_THRESHOLDS:
-          // Save threshold alerts to Supabase
-          const { error: thresholdsError } = await supabase
-            .from('thresholds')
-            .upsert(
-              (data as ThresholdAlert[]).map(alert => ({
-                consumption_id: alert.consumptionId,
-                consumption_type: alert.type,
-                threshold_value: alert.threshold,
-                active: alert.active,
-                user_id: user.id
-              })),
-              { onConflict: 'consumption_id' }
-            );
-          if (thresholdsError) throw thresholdsError;
-          break;
-
+          return await saveThresholdsToSupabase(data as ThresholdAlert[], user.id);
+          
         default:
           console.warn(`No Supabase table for storage key: ${key}, storing in localStorage only`);
           return true;
       }
-      return true;
     } catch (error) {
       console.error(`Error saving data to Supabase for key ${key}:`, error);
       return false;
     }
   };
 
-  // Save a calculation to the database or localStorage
+  // Save a calculation result
   const saveCalculationResult = async (result: CalculationResult): Promise<boolean> => {
     try {
-      if (user) {
-        // Prepare data for Supabase (as JSON)
-        const dbData = {
-          date: result.date.toISOString(),
-          office_total: result.officeTotal,
-          ac_total: result.acTotal,
-          office_data: JSON.stringify(result.officeData),
-          ac_data: JSON.stringify(result.acData),
-          office_bill: JSON.stringify(result.officeBill),
-          ac_bill: JSON.stringify(result.acBill),
-          month: result.month,
-          groups: JSON.stringify(result.groups),
-          user_id: user.id
-        };
-        
-        // Insert into database
-        const { error } = await supabase
-          .from('calculation_results')
-          .insert(dbData);
-        
-        if (error) throw error;
-      }
-
-      // Also update localStorage
-      const results = JSON.parse(localStorage.getItem(STORAGE_KEY_RESULTS) || '[]');
+      // Update local state
+      const results = [...calculationResults];
       results.unshift(result);
-      localStorage.setItem(STORAGE_KEY_RESULTS, JSON.stringify(results));
+      setCalculationResults(results);
+      
+      // Save to Supabase if logged in
+      if (user) {
+        return await saveCalculationResultToSupabase(result, user.id);
+      }
       
       return true;
     } catch (error) {
@@ -257,18 +143,20 @@ export function useEnergyStorage() {
     }
   };
   
-  const getStoredData = () => ({
+  // Get all stored data
+  const getStoredData = (): StorageData => ({
     officeData,
     acData,
     officeBill,
     acBill,
-    calculationResults,
-    consumptionGroups,
-    thresholdAlerts,
+    results: calculationResults,
+    groups: consumptionGroups,
+    thresholds: thresholdAlerts,
     monthlyConsumptionData,
     consumptionTypeLabels
   });
   
+  // Return hook interface
   return {
     getStoredData,
     setOfficeData,
